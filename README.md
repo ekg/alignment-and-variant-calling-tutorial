@@ -157,8 +157,7 @@ bwa mem -t $threads -R '@RG\tID:K12\tSM:K12' \
     ~/ref/E.coli_K12_MG1655.fa SRR1770413_1.fastq.gz SRR1770413_2.fastq.gz \
     | samtools view -Shu - \
     | samtools sort -o - x \
-    | samtools rmdup - - \
-    | samtools view -b - >SRR1770413.bam
+    | samtools rmdup - - >SRR1770413.bam
 ```
 
 Breaking it down by line:
@@ -169,4 +168,13 @@ Breaking it down by line:
 - *sorting the BAM file*: `samtools sort -o - x` --- read from stdin and output to stdout (`-o`). The `x` means nothing, it's just a placeholder to work around [a bug in samtools](https://github.com/samtools/samtools/issues/356).
 - *removing PCR duplicates*: `samtools rmdup - -` --- this completely removes reads which appear to be redundant PCR duplicates based on their read mapping position.
 
-And the last line just ensures that the output is compressed BAM.
+Now, run the same alignment process for the O104:H4 strain's data. Make sure to specify a different sample name via the `-R '@RG...` flag incantation:
+
+```bash
+bwa mem -t $threads -R '@RG\tID:O104_H4\tSM:O104_H4' \
+    ~/ref/E.coli_K12_MG1655.fa SRR341549_1.fastq.gz  SRR341549_2.fastq.gz \
+    | samtools view -Shu - \
+    | samtools sort -o - x \
+    | samtools rmdup - - >SRR341549.bam
+```
+
