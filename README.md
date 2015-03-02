@@ -28,7 +28,7 @@ cd vcflib && make
 
 Let's assume you're in an environment where you've already got them available.
 
-## Part 1: Alignment walk-through
+## Part 1: Aligning E. Coli data with `bwa mem`
 
 [E. Coli K12](https://en.wikipedia.org/wiki/Escherichia_coli#Model_organism) is a common laboratory strain that has lost its ability to live in the human intestine, but is ideal for manipulation in a controlled setting.
 The genome is relatively short, and so it's a good place to start learning about alignment and variant calling.
@@ -150,7 +150,7 @@ We could the steps one-by-one, generating an intermediate file for each step.
 However, this isn't really necessary unless we want to debug the process, and it will make a lot of excess files which will do nothing but confuse us when we come to work with the data later.
 Thankfully, it's easy to use [unix pipes](https://en.wikiepdia.org/wiki/Pipeline_%28Unix%29) to stream these tools together (see this [nice thread about piping bwa and samtools together on biostar](https://www.biostars.org/p/43677/) for a discussion of the benefits and possible drawbacks of this).
 
-You can now run the alignment using a piped approach. Replace `$threads` with the number of CPUs you would like to use for alignment. Not all steps in `bwa` run in parallel, but the alignment, which is the most time-consuming step, does.
+You can now run the alignment using a piped approach. _Replace `$threads` with the number of CPUs you would like to use for alignment._ Not all steps in `bwa` run in parallel, but the alignment, which is the most time-consuming step, does. You'll need to set this given the available resources you have.
 
 ```bash
 bwa mem -t $threads -R '@RG\tID:K12\tSM:K12' \
@@ -178,3 +178,48 @@ bwa mem -t $threads -R '@RG\tID:O104_H4\tSM:O104_H4' \
     | samtools rmdup - - >SRR341549.bam
 ```
 
+## Part 2: Calling variants
+
+Now that we have our alignments sorted, we can quickly determine variation against the reference by scanning through them using a variant caller.
+There are many options, including [samtools mpileup](http://samtools.sourceforge.net/samtools.shtml), [platypus](http://www.well.ox.ac.uk/platypus), and the [GATK](https://www.broadinstitute.org/gatk/).
+For this tutorial, we'll keep things simple and use [freebayes](https://github.com/ekg/freebayes). It has a number of advantages in this context (bacterial genomes), such as long-term support for haploid (and polyploid) genomes. However, the best reason to use it is that it just works and produces a very well-annotated VCF output that is suitable for immediate downstream filtering.
+
+### Variant calls with `freebayes`
+
+Because we've set up the samples
+
+```bash
+freebayes -f ~/ref/E.coli_K12_MG1655.fa 
+```
+
+Calling them jointly can help if we have a population of samples to use to help remove calls from paralagous regions. The Bayesian model in freebayes combines the data likelihoods from sequencing data with an estimate of the probability of observing a given set of genotypes under assumptions of neutral evolution and a [panmictic](https://en.wikipedia.org/wiki/Panmixia) population. For instance, [it would be very unusual to find a locus at which all the samples are heterozygous](https://en.wikipedia.org/wiki/Hardy%E2%80%93Weinberg_principle). It also helps improve statistics about observational biases (like strand bias, read placement bias, and allele balance in heterozygotes) by bringing more data into the algorithm.
+
+However, in this context, we only have two samples and the best reason to call them jointly is to make sure we have a genotype for each one at every locus where a non-reference allele passes the caller's thresholds in either sample.
+
+### Take a peek with `vt`
+
+### Filtering using the transition/transversion ratio (ts/tv)
+
+### Comparing the K12 and O104:H4 strains
+
+## Part 3: When you know the truth
+
+### The NIST Genome in a Bottle truth set for NA12878
+
+### Calling variants in [20p12.2](http://genome-euro.ucsc.edu/cgi-bin/hgTracks?db=hg19&position=chr20%3A9200001-12100000)
+
+To keep things quick enough for the tutorial, let's grab a little chunk of an NA12878 dataset. Let's use [20p12.2](http://genome-euro.ucsc.edu/cgi-bin/hgTracks?db=hg19&position=chr20%3A9200001-12100000).
+
+We don't need to download the entire BAM file to do this. `samtools` can download the BAM index (`.bai`) and then use this to jump in the remote file hosted over FTP or HTTP.
+
+```bash
+samtools view -b ftp://ftp-trace.ncbi.nih.gov/giab/ftp/technical/NA12878_data_other_projects/alignment/XPrize_Illumina_WG.bam 20:9200001-12100000 >NA12878.20p12.2.XPrize.bam
+```
+
+## Part 4: Exploring alternative genomic contexts
+
+### Simulation with mutatrix and wgsim
+
+### A simulated population
+
+### Polyploids and pooled sequencing contexts
