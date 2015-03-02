@@ -73,9 +73,9 @@ As a point of comparison, let's also pick up a [sequencing data set from a diffe
 fastq-dump --split-files SRR341549
 ```
 
-## Setting up our reference indexes
+### Setting up our reference indexes
 
-### FASTA file index
+#### FASTA file index
 
 First, we'll want to allow tools (such as our variant caller) to quickly access certain regions in the reference. This is done using the samtools `.fai` FASTA index format, which records the lengths of the various sequences in the reference and their offsets from the beginning of the file.
 
@@ -99,7 +99,7 @@ AAAATGGTTACACCATTTACCAAACTTATGTATCGCCTGGTGCTTTTGAAATTAGTGATC
 TCTATTCCACGTCGTCGAGCG
 ```
 
-### BWA's FM-index
+#### BWA's FM-index
 
 BWA uses the [FM-index](https://en.wikipedia.org/wiki/FM-index), which a compressed full-text substring index based around the [Burrows-Wheeler transform](https://en.wikipedia.org/wiki/Burrows%E2%80%93Wheeler_transform).
 To use this index, we first need to build it:
