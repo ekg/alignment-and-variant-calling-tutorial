@@ -13,6 +13,7 @@ We're going to use a bunch of fun tools for working with genomic data:
 7. [sambamba](https://github.com/lomereiter/sambamba)
 8. [seqtk](https://github.com/lh3/seqtk)
 9. [mutatrix](https://github.com/ekg/mutatrix)
+8. [sra-tools](https://github.com/ncbi/sra-tools/wiki/HowTo:-Binary-Installation)
 
 In most cases, you can download and build these using this kind of pattern:
 
@@ -28,7 +29,11 @@ git clone --recursive https://github.com/ekg/vcflib
 cd vcflib && make
 ```
 
-Let's assume you're in an environment where you've already got them available.
+In some cases you can download precompiled binaries. For instance, you can head
+to the [sambamba releases page](https://github.com/lomereiter/sambamba/releases) to find binaries that
+should work on any modern Linux or OSX distribution. The same applies to the [sra-toolkit, which is probably easier to install from available binaries](https://github.com/ncbi/sra-tools/wiki/HowTo:-Binary-Installation).
+
+Otherwise, let's assume you're in an environment where you've already got them available.
 
 ## Part 1: Aligning E. Coli data with `bwa mem`
 
@@ -50,7 +55,7 @@ curl -s http://hypervolu.me/%7Eerik/genomes/E.coli_K12_MG1655.fa | head
 
 ### E. Coli K12 Illumina 2x300bp MiSeq sequencing results
 
-For testing alignment, let's get some data from a [recently-submitted sequencing run on a K12 strain from the University of Exeter](http://www.ncbi.nlm.nih.gov/sra/?term=SRR1770413). We can us the [sratoolkit](https://github.com/ncbi/sratoolkit) to directly pull the sequence data (in paired FASTQ format) from the archive:
+For testing alignment, let's get some data from a [recently-submitted sequencing run on a K12 strain from the University of Exeter](http://www.ncbi.nlm.nih.gov/sra/?term=SRR1770413). We can use the [sratoolkit](https://github.com/ncbi/sratoolkit) to directly pull the sequence data (in paired FASTQ format) from the archive:
 
 ```bash
 fastq-dump --split-files SRR1770413
@@ -145,12 +150,11 @@ Here's an outline of the steps we'll follow to align our K12 strain against the 
 1. use bwa to generate SAM records for each read
 2. convert the output to BAM
 3. sort the output
-4. remove PCR duplicates that result from exact duplication of a template during amplification
-5. convert to compressed BAM, and save
+4. mark PCR duplicates that result from exact duplication of a template during amplification
 
 We could the steps one-by-one, generating an intermediate file for each step.
 However, this isn't really necessary unless we want to debug the process, and it will make a lot of excess files which will do nothing but confuse us when we come to work with the data later.
-Thankfully, it's easy to use [unix pipes](https://en.wikiepdia.org/wiki/Pipeline_%28Unix%29) to stream these tools together (see this [nice thread about piping bwa and samtools together on biostar](https://www.biostars.org/p/43677/) for a discussion of the benefits and possible drawbacks of this).
+Thankfully, it's easy to use [unix pipes](https://en.wikiepdia.org/wiki/Pipeline_%28Unix%29) to stream most of these tools together (see this [nice thread about piping bwa and samtools together on biostar](https://www.biostars.org/p/43677/) for a discussion of the benefits and possible drawbacks of this).
 
 You can now run the alignment using a piped approach. _Replace `$threads` with the number of CPUs you would like to use for alignment._ Not all steps in `bwa` run in parallel, but the alignment, which is the most time-consuming step, does. You'll need to set this given the available resources you have.
 
@@ -158,8 +162,8 @@ You can now run the alignment using a piped approach. _Replace `$threads` with t
 bwa mem -t $threads -R '@RG\tID:K12\tSM:K12' \
     ~/ref/E.coli_K12_MG1655.fa SRR1770413_1.fastq.gz SRR1770413_2.fastq.gz \
     | samtools view -Shu - \
-    | samtools sort -o - x \
-    | samtools rmdup - - >SRR1770413.bam
+    | sambamba sort /dev/stdin -o /dev/stdout >SRR1770413.raw.bam
+sambamba markdup SRR1770413.raw.bam SRR1770413.bam
 ```
 
 Breaking it down by line:
@@ -167,8 +171,8 @@ Breaking it down by line:
 - *alignment with bwa*: `bwa mem -t $threads -R '@RG\tID:K12\tSM:K12'` --- this says "align using so many threads" and also "give the reads the read group K12 and the sample name K12"
 - *reference and FASTQs* `~/ref/E.coli_K12_MG1655.fa SRR1770413_1.fastq.gz SRR1770413_2.fastq.gz` --- this just specifies the base reference file name (`bwa` finds the indexes using this) and the input alignment files. The first file should contain the first mate, the second file the second mate.
 - *conversion to BAM*: `samtools view -Shu -` --- this reads SAM from stdin (`-S` and the `-` specifier in place of the file name indicate this) and converts to uncompressed BAM (there isn't need to compress, as it's just going to be parsed by the next program in the pipeline.
-- *sorting the BAM file*: `samtools sort -o - x` --- read from stdin and output to stdout (`-o`). The `x` means nothing, it's just a placeholder to work around [a bug in samtools](https://github.com/samtools/samtools/issues/356).
-- *removing PCR duplicates*: `samtools rmdup - -` --- this completely removes reads which appear to be redundant PCR duplicates based on their read mapping position.
+- *sorting the BAM file*: `sambamba sort /dev/stdin -o /dev/stdout` --- sort the BAM file, reading from stdin and writing to stdout. We then use shell redirection to write it to a file, but you could put tools that can work on streams directly after this step.
+- *marking PCR duplicates*: `sambamba markdup SRR1770413.raw.bam SRR1770413.bam` --- this marks reads which appear to be redundant PCR duplicates based on their read mapping position. It [uses the same criteria for marking duplicates as picard](http://lomereiter.github.io/sambamba/docs/sambamba-markdup.html).
 
 Now, run the same alignment process for the O104:H4 strain's data. Make sure to specify a different sample name via the `-R '@RG...` flag incantation to specify the identity of the data in the BAM file header and in the alignment records themselves:
 
@@ -176,11 +180,11 @@ Now, run the same alignment process for the O104:H4 strain's data. Make sure to 
 bwa mem -t $threads -R '@RG\tID:O104_H4\tSM:O104_H4' \
     ~/ref/E.coli_K12_MG1655.fa SRR341549_1.fastq.gz  SRR341549_2.fastq.gz \
     | samtools view -Shu - \
-    | samtools sort -o - x \
-    | samtools rmdup - - >SRR341549.bam
+    | sambamba sort /dev/stdin -o /dev/stdout >SRR341549.raw.bam
+sambamba markdup SRR341549.raw.bam SRR341549.bam
 ```
 
-As a standard post-processing step, it's helpful to add a BAM index to the files. This let's us jump around in them quickly using BAM compatible tools that can read the index.
+As a standard post-processing step, it's helpful to add a BAM index to the files. This let's us jump around in them quickly using BAM compatible tools that can read the index. `sambamba` does this for us by default, but if it hadn't we could use samtools to achieve exactly the same index.
 
 ```bash
 samtools index SRR1770413.bam
