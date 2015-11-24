@@ -160,7 +160,7 @@ You can now run the alignment using a piped approach. _Replace `$threads` with t
 
 ```bash
 bwa mem -t $threads -R '@RG\tID:K12\tSM:K12' \
-    ~/ref/E.coli_K12_MG1655.fa SRR1770413_1.fastq.gz SRR1770413_2.fastq.gz \
+    E.coli_K12_MG1655.fa SRR1770413_1.fastq.gz SRR1770413_2.fastq.gz \
     | samtools view -Shu - \
     | sambamba sort /dev/stdin -o /dev/stdout >SRR1770413.raw.bam
 sambamba markdup SRR1770413.raw.bam SRR1770413.bam
@@ -169,7 +169,7 @@ sambamba markdup SRR1770413.raw.bam SRR1770413.bam
 Breaking it down by line:
 
 - *alignment with bwa*: `bwa mem -t $threads -R '@RG\tID:K12\tSM:K12'` --- this says "align using so many threads" and also "give the reads the read group K12 and the sample name K12"
-- *reference and FASTQs* `~/ref/E.coli_K12_MG1655.fa SRR1770413_1.fastq.gz SRR1770413_2.fastq.gz` --- this just specifies the base reference file name (`bwa` finds the indexes using this) and the input alignment files. The first file should contain the first mate, the second file the second mate.
+- *reference and FASTQs* `E.coli_K12_MG1655.fa SRR1770413_1.fastq.gz SRR1770413_2.fastq.gz` --- this just specifies the base reference file name (`bwa` finds the indexes using this) and the input alignment files. The first file should contain the first mate, the second file the second mate.
 - *conversion to BAM*: `samtools view -Shu -` --- this reads SAM from stdin (`-S` and the `-` specifier in place of the file name indicate this) and converts to uncompressed BAM (there isn't need to compress, as it's just going to be parsed by the next program in the pipeline.
 - *sorting the BAM file*: `sambamba sort /dev/stdin -o /dev/stdout` --- sort the BAM file, reading from stdin and writing to stdout. We then use shell redirection to write it to a file, but you could put tools that can work on streams directly after this step.
 - *marking PCR duplicates*: `sambamba markdup SRR1770413.raw.bam SRR1770413.bam` --- this marks reads which appear to be redundant PCR duplicates based on their read mapping position. It [uses the same criteria for marking duplicates as picard](http://lomereiter.github.io/sambamba/docs/sambamba-markdup.html).
@@ -178,7 +178,7 @@ Now, run the same alignment process for the O104:H4 strain's data. Make sure to 
 
 ```bash
 bwa mem -t $threads -R '@RG\tID:O104_H4\tSM:O104_H4' \
-    ~/ref/E.coli_K12_MG1655.fa SRR341549_1.fastq.gz  SRR341549_2.fastq.gz \
+    E.coli_K12_MG1655.fa SRR341549_1.fastq.gz  SRR341549_2.fastq.gz \
     | samtools view -Shu - \
     | sambamba sort /dev/stdin -o /dev/stdout >SRR341549.raw.bam
 sambamba markdup SRR341549.raw.bam SRR341549.bam
@@ -203,7 +203,7 @@ For this tutorial, we'll keep things simple and use [freebayes](https://github.c
 It's quite easy to use `freebayes` provided you have your BAM file completed. We use `--ploidy 1` to indicate that the sample should be genotyped as haploid.
 
 ```bash
-freebayes -f ~/ref/E.coli_K12_MG1655.fa --ploidy 1 SRR1770413.bam >SRR1770413.vcf
+freebayes -f E.coli_K12_MG1655.fa --ploidy 1 SRR1770413.bam >SRR1770413.vcf
 ```
 
 ### Joint calling
@@ -215,7 +215,7 @@ However, in this context, we only have two samples and the best reason to call t
 We would run a joint call by dropping in both BAMs on the command line to freebayes:
 
 ```bash
-freebayes -f ~/ref/E.coli_K12_MG1655.fa --ploidy 1 SRR1770413.bam SRR341549.bam >e_colis.vcf
+freebayes -f E.coli_K12_MG1655.fa --ploidy 1 SRR1770413.bam SRR341549.bam >e_colis.vcf
 ```
 
 As long as we've added the read group (@RG) flags when we aligned (or did so after with [bamaddrg](https://github.com/ekg/bamaddrg), that's all we need to do to run the joint calling. (NB: due to the amount of data in SRR341549, this should take about 20 minutes.)
@@ -300,7 +300,7 @@ samtools view -b ftp://ftp-trace.ncbi.nih.gov/giab/ftp/technical/NA12878_data_ot
 We can call variants as before. Note that we drop the `--ploidy 1` flag. `freebayes` assumes its input is diploid by default. We can use bgzip in-line here to save the extra command for compression.
 
 ```bash
-freebayes -f ~/ref/hs37d5.fa NA12878.20p12.2.XPrize.bam | bgzip >NA12878.20p12.2.XPrize.vcf.gz
+freebayes -f hs37d5.fa NA12878.20p12.2.XPrize.bam | bgzip >NA12878.20p12.2.XPrize.vcf.gz
 tabix -p vcf NA12878.20p12.2.XPrize.vcf.gz
 ```
 
@@ -328,7 +328,7 @@ tabix -p vcf NIST_NA12878_20p12.2.vcf.gz
 Now, we can compare our results to the calls to get a list of potentially failed sites.
 
 ```bash
-vcfintersect -r ~/ref/hs37d5.fa -v -i NIST_NA12878_20p12.2.vcf.gz NA12878.20p12.2.XPrize.vcf.gz \
+vcfintersect -r hs37d5.fa -v -i NIST_NA12878_20p12.2.vcf.gz NA12878.20p12.2.XPrize.vcf.gz \
     | vcfintersect -b giab_callable.chr20.bed \
     | bgzip >NA12878.20p12.2.XPrize.giab_failed.vcf.gz
 tabix -p vcf NA12878.20p12.2.XPrize.giab_failed.vcf.gz
@@ -361,7 +361,7 @@ Finally, the variants in the GiAB set have been normalized using a similar proce
 
 ```bash
 vcfallelicprimitives -kg NA12878.20p12.2.XPrize.vcf.gz \
-    | vt normalize -r ~/ref/hs37d5.fa - \
+    | vt normalize -r hs37d5.fa - \
     | bgzip >NA12878.20p12.2.XPrize.norm.vcf.gz
 ```
 
@@ -370,7 +370,7 @@ Here, `vcfallelicprimitives -kp` decomposes any haplotype calls from `freebayes`
 We can now compare the results again:
 
 ```bash
-vcfintersect -r ~/ref/hs37d5.fa -v -i NIST_NA12878_20p12.2.vcf.gz NA12878.20p12.2.XPrize.norm.vcf.gz \
+vcfintersect -r hs37d5.fa -v -i NIST_NA12878_20p12.2.vcf.gz NA12878.20p12.2.XPrize.norm.vcf.gz \
     | vcfintersect -b giab_callable.chr20.bed \
     | bgzip >NA12878.20p12.2.XPrize.norm.giab_failed.vcf.gz
 tabix -p vcf NA12878.20p12.2.XPrize.norm.giab_failed.vcf.gz
@@ -390,7 +390,7 @@ vcffilter -f "QUAL > 10" NA12878.20p12.2.XPrize.norm.giab_failed.vcf.gz \
 We might also want to measure our sensitivity from different strategies. To do this, just invert the call to `vcfintersect` by removing the `-v` flag (which tells it to invert):
 
 ```bash
-vcfintersect -r ~/ref/hs37d5.fa -i NIST_NA12878_20p12.2.vcf.gz NA12878.20p12.2.XPrize.norm.vcf.gz \
+vcfintersect -r hs37d5.fa -i NIST_NA12878_20p12.2.vcf.gz NA12878.20p12.2.XPrize.norm.vcf.gz \
     | vcfintersect -b giab_callable.chr20.bed \
     | bgzip >NA12878.20p12.2.XPrize.norm.giab_passed.vcf.gz
 tabix -p vcf NA12878.20p12.2.XPrize.norm.giab_passed.vcf.gz
