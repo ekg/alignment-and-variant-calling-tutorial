@@ -10,8 +10,9 @@ We're going to use a bunch of fun tools for working with genomic data:
 4. [vt](https://github.com/atks/vt)
 5. [freebayes](https://github.com/ekg/freebayes)
 6. [vcflib](https://github.com/ekg/vcflib/)
-7. [seqtk](https://github.com/lh3/seqtk)
-8. [mutatrix](https://github.com/ekg/mutatrix)
+7. [sambamba](https://github.com/lomereiter/sambamba)
+8. [seqtk](https://github.com/lh3/seqtk)
+9. [mutatrix](https://github.com/ekg/mutatrix)
 
 In most cases, you can download and build these using this kind of pattern:
 
