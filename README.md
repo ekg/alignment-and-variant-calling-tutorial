@@ -1,5 +1,7 @@
 # NGS alignment and variant calling
 
+This tutorial steps through some basic tasks in alignment and variant calling using a handful of Illumina sequencing data sets. For theoretical background, please refer to the included [presentation on alignment and variant calling](https://github.com/ekg/alignment-and-variant-calling-tutorial/raw/master/presentations/Alignment%2C%20Variant%20Calling%2C%20and%20Filtering%20(WGC%20NGS%20Bioinformatics).pdf).
+    
 ## Part 0: Setup
 
 We're going to use a bunch of fun tools for working with genomic data:
