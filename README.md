@@ -294,6 +294,12 @@ wget ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/NA12878_HG001/NISTv2.19/u
 
 For variant calling work, we can use the [1000 Genomes Project's version of the GRCh37 reference](ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz). We could also use the [version of the reference that doesn't include dummy sequences](ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/human_g1k_v37.fasta.gz), as we're just doing variant calling.
 
+```bash
+wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz
+gunzip hs37d5.fa.gz
+samtools faidx hs37d5.fa
+```
+
 ### Calling variants in [20p12.2](http://genome-euro.ucsc.edu/cgi-bin/hgTracks?db=hg19&position=chr20%3A9200001-12100000)
 
 To keep things quick enough for the tutorial, let's grab a little chunk of an NA12878 dataset. Let's use [20p12.2](http://genome-euro.ucsc.edu/cgi-bin/hgTracks?db=hg19&position=chr20%3A9200001-12100000).
