@@ -319,7 +319,7 @@ tabix -p vcf NA12878.20p12.2.XPrize.vcf.gz
 
 ### Comparing our results to the GiAB truth set
 
-We'll need to download the [GiAB truth set](ftp://ftp-trace.ncbi.nih.gov/giab/ftp/release/NA12878_HG001/NISTv2.18/). Its core consists of a VCF file defining "true" variants and a BED file defining callable regions.
+We'll need to download the [GiAB truth set](ftp://ftp-trace.ncbi.nih.gov/giab/ftp/release/NA12878_HG001/NISTv2.19/). Its core consists of a VCF file defining "true" variants and a BED file defining callable regions.
 
 In order to compare, we need to exclude things in our output that are outside the callable region, and then intersect with the truth set. That which we don't see in the truth set, and is also in the callable region should be considered a false positive.
 
@@ -327,13 +327,13 @@ First, we'll prepare a reduced representation of this dataset to match 20p12.2:
 
 ```bash
 # subset the callable regions to chr20 (makes intersection much faster)
-zcat union13callableMQonlymerged_addcert_nouncert_excludesimplerep_excludesegdups_excludedecoy_excludeRepSeqSTRs_noCNVs_v2.18_2mindatasets_5minYesNoRatio.bed.gz | grep ^20 >giab_callable.chr20.bed
+zcat union13callableMQonlymerged_addcert_nouncert_excludesimplerep_excludesegdups_excludedecoy_excludeRepSeqSTRs_noCNVs_v2.19_2mindatasets_5minYesNoRatio.bed.gz | grep ^20 >giab_callable.chr20.bed
 
 # index the high-confidence calls
 tabix -p vcf NISTIntegratedCalls_14datasets_131103_allcall_UGHapMerge_HetHomVarPASS_VQSRv2.18_all_nouncert_excludesimplerep_excludesegdups_excludedecoy_excludeRepSeqSTRs_noCNVs.vcf.gz
 
 # and subset them to 20p12.2
-tabix -h NISTIntegratedCalls_14datasets_131103_allcall_UGHapMerge_HetHomVarPASS_VQSRv2.18_all_nouncert_excludesimplerep_excludesegdups_excludedecoy_excludeRepSeqSTRs_noCNVs.vcf.gz 20:9200001-12100000 \
+tabix -h NISTv2.19/NISTIntegratedCalls_14datasets_131103_allcall_UGHapMerge_HetHomVarPASS_VQSRv2.19_2mindatasets_5minYesNoRatio_all_nouncert_excludesimplerep_excludesegdups_excludedecoy_excludeRepSeqSTRs_noCNVs.vcf.gz 20:9200001-12100000 \
     | bgzip >NIST_NA12878_20p12.2.vcf.gz
 tabix -p vcf NIST_NA12878_20p12.2.vcf.gz
 ```
