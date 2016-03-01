@@ -164,7 +164,7 @@ You can now run the alignment using a piped approach. _Replace `$threads` with t
 bwa mem -t $threads -R '@RG\tID:K12\tSM:K12' \
     E.coli_K12_MG1655.fa SRR1770413_1.fastq.gz SRR1770413_2.fastq.gz \
     | samtools view -Shu - \
-    | sambamba sort /dev/stdin -o /dev/stdout >SRR1770413.raw.bam
+    | sambamba sort /dev/stdin -o SRR1770413.raw.bam
 sambamba markdup SRR1770413.raw.bam SRR1770413.bam
 ```
 
