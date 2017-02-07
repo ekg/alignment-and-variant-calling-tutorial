@@ -473,7 +473,7 @@ tabix -p vcf NA12878.20p12.2.XPrize.vcf.gz
 
 We can now generate the approprate input to `vw` for training by using the `hhga_region` script provided in the `hhga` distribution:
 
-bash```
+```bash
 hhga_region \
     -r 20:9200000-12100000 \
     -w 32 \
