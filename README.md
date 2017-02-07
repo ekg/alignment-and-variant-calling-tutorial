@@ -16,8 +16,10 @@ We're going to use a bunch of fun tools for working with genomic data:
 8. [seqtk](https://github.com/lh3/seqtk)
 9. [mutatrix](https://github.com/ekg/mutatrix)
 10. [sra-tools](https://github.com/ncbi/sra-tools/wiki/HowTo:-Binary-Installation)
-11. [hhga](https://github.com/ekg/hhga)
-12. [vg](https://github.com/vgteam/vg)
+11. [glia](https://github.com/ekg/glia.git)
+12. [hhga](https://github.com/ekg/hhga)
+13. [vg](https://github.com/vgteam/vg)
+14. [vw](https://github.com/JohnLangford/vowpal_wabbit/wiki/Download)
 
 In most cases, you can download and build these using this kind of pattern:
 
@@ -26,7 +28,7 @@ git clone https://github.com/lh3/bwa
 cd bwa && make
 ```
 
-or, in the case of several packages (vcflib, sambamba, freebayes, hhga, and vg), submodules are used to control the dependencies of the project, and so the whole source tree must be cloned using the `--recursive` flag to git. For example, here is how we'd clone and build freebayes:
+or, in the case of several packages (vcflib, sambamba, freebayes, glia, hhga, and vg), submodules are used to control the dependencies of the project, and so the whole source tree must be cloned using the `--recursive` flag to git. For example, here is how we'd clone and build freebayes:
 
 ```bash
 git clone --recursive https://github.com/ekg/freebayes
@@ -304,21 +306,22 @@ gunzip hs37d5.fa.gz
 samtools faidx hs37d5.fa
 ```
 
-### Calling variants in [20p12.2](http://genome-euro.ucsc.edu/cgi-bin/hgTracks?db=hg19&position=chr20%3A9200001-12100000)
+### Calling variants in [20p12.1](http://genome-euro.ucsc.edu/cgi-bin/hgTracks?db=hg19&lastVirtModeType=default&lastVirtModeExtraState=&virtModeType=default&virtMode=0&nonVirtPosition=&position=chr20%3A12100001-17900000&hgsid=220600397_Vs2XvVv0rRPE9lPwepHAL4Iq3ndi)
 
-To keep things quick enough for the tutorial, let's grab a little chunk of an NA12878 dataset. Let's use [20p12.2](http://genome-euro.ucsc.edu/cgi-bin/hgTracks?db=hg19&position=chr20%3A9200001-12100000).
+To keep things quick enough for the tutorial, let's grab a little chunk of an NA12878 dataset. Let's use [20p12.1](http://genome-euro.ucsc.edu/cgi-bin/hgTracks?db=hg19&lastVirtModeType=default&lastVirtModeExtraState=&virtModeType=default&virtMode=0&nonVirtPosition=&position=chr20%3A12100001-17900000&hgsid=220600397_Vs2XvVv0rRPE9lPwepHAL4Iq3ndi).
 
 We don't need to download the entire BAM file to do this. `samtools` can download the BAM index (`.bai`) provided it hosted alongside the file on the HTTP/FTP server and then use this to jump to a particular target in the remote file.
 
 ```bash
-samtools view -b ftp://ftp-trace.ncbi.nih.gov/giab/ftp/technical/NA12878_data_other_projects/alignment/XPrize_Illumina_WG.bam 20:9200001-12100000 >NA12878.20p12.2.XPrize.bam
+samtools view -b ftp://ftp-trace.ncbi.nih.gov/giab/ftp/technical/NA12878_data_other_projects/alignment/XPrize_Illumina_WG.bam 20:12100000-17900000 >NA12878.20p12.1.XPrize.bam
+samtools index NA12878.20p12.1.XPrize.bam
 ```
 
 We can call variants as before. Note that we drop the `--ploidy 1` flag. `freebayes` assumes its input is diploid by default. We can use bgzip in-line here to save the extra command for compression.
 
 ```bash
-freebayes -f hs37d5.fa NA12878.20p12.2.XPrize.bam | bgzip >NA12878.20p12.2.XPrize.vcf.gz
-tabix -p vcf NA12878.20p12.2.XPrize.vcf.gz
+freebayes -f hs37d5.fa NA12878.20p12.1.XPrize.bam | bgzip >NA12878.20p12.1.XPrize.vcf.gz
+tabix -p vcf NA12878.20p12.1.XPrize.vcf.gz
 ```
 
 ### Comparing our results to the GiAB truth set
@@ -327,7 +330,7 @@ We'll need to download the [GiAB truth set](ftp://ftp-trace.ncbi.nih.gov/giab/ft
 
 In order to compare, we need to exclude things in our output that are outside the callable region, and then intersect with the truth set. That which we don't see in the truth set, and is also in the callable region should be considered a false positive.
 
-First, we'll prepare a reduced representation of this dataset to match 20p12.2:
+First, we'll prepare a reduced representation of this dataset to match 20p12.1:
 
 ```bash
 # subset the callable regions to chr20 (makes intersection much faster)
@@ -336,28 +339,29 @@ zcat union13callableMQonlymerged_addcert_nouncert_excludesimplerep_excludesegdup
 # index the high-confidence calls
 tabix -p vcf NISTIntegratedCalls_14datasets_131103_allcall_UGHapMerge_HetHomVarPASS_VQSRv2.19_2mindatasets_5minYesNoRatio_all_nouncert_excludesimplerep_excludesegdups_excludedecoy_excludeRepSeqSTRs_noCNVs.vcf.gz
 
-# and subset them to 20p12.2
-tabix -h NISTIntegratedCalls_14datasets_131103_allcall_UGHapMerge_HetHomVarPASS_VQSRv2.19_2mindatasets_5minYesNoRatio_all_nouncert_excludesimplerep_excludesegdups_excludedecoy_excludeRepSeqSTRs_noCNVs.vcf.gz 20:9200001-12100000 \
-    | bgzip >NIST_NA12878_20p12.2.vcf.gz
-tabix -p vcf NIST_NA12878_20p12.2.vcf.gz
+# and subset them to 20p12.1
+tabix -h NISTIntegratedCalls_14datasets_131103_allcall_UGHapMerge_HetHomVarPASS_VQSRv2.19_2mindatasets_5minYesNoRatio_all_nouncert_excludesimplerep_excludesegdups_excludedecoy_excludeRepSeqSTRs_noCNVs.vcf.gz 20:12100000-17900000 \
+    | bgzip >NIST_NA12878_20p12.1.vcf.gz
+tabix -p vcf NIST_NA12878_20p12.1.vcf.gz
 ```
 
 Now, we can compare our results to the calls to get a list of potentially failed sites.
 
 ```bash
-vcfintersect -r hs37d5.fa -v -i NIST_NA12878_20p12.2.vcf.gz NA12878.20p12.2.XPrize.vcf.gz \
+vcfintersect -r hs37d5.fa -v -i NIST_NA12878_20p12.1.vcf.gz NA12878.20p12.1.XPrize.vcf.gz \
     | vcfintersect -b giab_callable.chr20.bed \
-    | bgzip >NA12878.20p12.2.XPrize.giab_failed.vcf.gz
-tabix -p vcf NA12878.20p12.2.XPrize.giab_failed.vcf.gz
+    | bgzip >NA12878.20p12.1.XPrize.giab_failed.vcf.gz
+tabix -p vcf NA12878.20p12.1.XPrize.giab_failed.vcf.gz
 ```
 
 We can now examine these using `vt peek` and `vcfstats`, or manually by inspecting them either serially:
 
 ```bash
-zcat NA12878.20p12.2.XPrize.giab_failed.vcf.gz | less -S
+zcat NA12878.20p12.1.XPrize.giab_failed.vcf.gz | less -S
 ```
 
 ... or by looking at loci which fail in `samtools tview`.
+
 
 ### Variant normalization
 
@@ -377,9 +381,9 @@ There are two main problems:
 Finally, the variants in the GiAB set have been normalized using a similar process, and doing so will ensure there are not any discrepancies when we compare.
 
 ```bash
-vcfallelicprimitives -kg NA12878.20p12.2.XPrize.vcf.gz \
+vcfallelicprimitives -kg NA12878.20p12.1.XPrize.vcf.gz \
     | vt normalize -r hs37d5.fa - \
-    | bgzip >NA12878.20p12.2.XPrize.norm.vcf.gz
+    | bgzip >NA12878.20p12.1.XPrize.norm.vcf.gz
 ```
 
 Here, `vcfallelicprimitives -kp` decomposes any haplotype calls from `freebayes`, keeping the genotype and site level annotation. (This isn't done by default because in some contexts doing so is inappropriate.) Then `vt normalize` ensures the variants are left-aligned. This isn't important for the comparison, as `vcfintersect` is haplotype-based, so it isn't affected by small differences in the positioning or descripition of single alleles, but it is good practice.
@@ -387,11 +391,13 @@ Here, `vcfallelicprimitives -kp` decomposes any haplotype calls from `freebayes`
 We can now compare the results again:
 
 ```bash
-vcfintersect -r hs37d5.fa -v -i NIST_NA12878_20p12.2.vcf.gz NA12878.20p12.2.XPrize.norm.vcf.gz \
+vcfintersect -r hs37d5.fa -v -i NIST_NA12878_20p12.1.vcf.gz NA12878.20p12.1.XPrize.norm.vcf.gz \
     | vcfintersect -b giab_callable.chr20.bed \
-    | bgzip >NA12878.20p12.2.XPrize.norm.giab_failed.vcf.gz
-tabix -p vcf NA12878.20p12.2.XPrize.norm.giab_failed.vcf.gz
+    | bgzip >NA12878.20p12.1.XPrize.norm.giab_failed.vcf.gz
+tabix -p vcf NA12878.20p12.1.XPrize.norm.giab_failed.vcf.gz
 ```
+
+Here we observe why normalization is important when comparing VCF files. Fortunately, the best package available for comparing variant calls to truth sets, [rtgeval](https://github.com/lh3/rtgeval), addresses exactly this concern, and also breaks comparisons into three parts matching the three types of information provided by the VCF file--- positional, allele, and genotype. We'll get into that in the next section when we learn to genotype and filter.
 
 ### Hard filtering strategies
 
@@ -400,56 +406,189 @@ The failed list provides a means to examine ways to reduce our false positive ra
 For example, we can test how many of the failed SNPs are removed by applying a simple quality filter and checking the output file's statistics.
 
 ```bash
-vcffilter -f "QUAL > 10" NA12878.20p12.2.XPrize.norm.giab_failed.vcf.gz \
+vcffilter -f "QUAL > 10" NA12878.20p12.1.XPrize.norm.giab_failed.vcf.gz \
     | vt peek -
 ```
 
 We might also want to measure our sensitivity from different strategies. To do this, just invert the call to `vcfintersect` by removing the `-v` flag (which tells it to invert):
 
 ```bash
-vcfintersect -r hs37d5.fa -i NIST_NA12878_20p12.2.vcf.gz NA12878.20p12.2.XPrize.norm.vcf.gz \
+vcfintersect -r hs37d5.fa -i NIST_NA12878_20p12.1.vcf.gz NA12878.20p12.1.XPrize.norm.vcf.gz \
     | vcfintersect -b giab_callable.chr20.bed \
-    | bgzip >NA12878.20p12.2.XPrize.norm.giab_passed.vcf.gz
-tabix -p vcf NA12878.20p12.2.XPrize.norm.giab_passed.vcf.gz
+    | bgzip >NA12878.20p12.1.XPrize.norm.giab_passed.vcf.gz
+tabix -p vcf NA12878.20p12.1.XPrize.norm.giab_passed.vcf.gz
 ```
 
 Now we can test how many variants remain after using the same filters on both:
 
 ```bash
-vcffilter -f "QUAL / AO > 10 & SAF > 0 & SAR > 0" NA12878.20p12.2.XPrize.norm.giab_passed.vcf.gz | wc -l
-vcffilter -f "QUAL / AO > 10 & SAF > 0 & SAR > 0" NA12878.20p12.2.XPrize.norm.giab_failed.vcf.gz | wc -l
+vcffilter -f "QUAL / AO > 10 & SAF > 0 & SAR > 0" NA12878.20p12.1.XPrize.norm.giab_passed.vcf.gz | wc -l
+vcffilter -f "QUAL / AO > 10 & SAF > 0 & SAR > 0" NA12878.20p12.1.XPrize.norm.giab_failed.vcf.gz | wc -l
 ```
 
-## Part 4: Exploring alternative genomic contexts
 
-`freebayes` is capable of handling a wide array of genomic contexts, for instance, pooled experiments and polyploid genomes.
+## Part 4: Learning to filter and genotype
 
-To evaluate these, few truth sets exist. One option is to use simulation to generate a dataset we can work from.
+Bayesian variant callers like `freebayes` use models based on first principles to generate estimates of variant quality, or the probability that a given genotyping is correct.
+However, there is not reason that such a model could not be learned directly from labeled data using supervised machine learning techniques.
+In the previous section, we used hard filters on features provided in the VCF file to remove outlier and low-quality variants.
+In this section we will use the Genome in a Bottle truth set to learn a model that will directly genotype and filter candidate calls in one step.
 
-### Simulation with mutatrix and wgsim
+### HHGA (Have Haplotypes, Genotypes, and Alleles) and the Vowpal Wabbit
 
-First, we'll want to pick up a reference genome that's pretty small so that we can quickly iterate the tests.
+[hhga](https://github.com/ekg/hhga) is an "example decision synthesizer" that transforms alignments (in BAM) and variant calls (in VCF) into a line-based text format compatible with the [Vowpal Wabbit](http://hunch.net/~vw/) (vw).
+The Vowpal Wabbit is a high-throughput machine learning method that uses the hashing trick to map arbitrary text features into a bounded vector space.
+It then uses online stochastic gradient descent (SGD) to learn a regressor (the model) mapping the hashed input space to a given output label.
+The fact that it is online and uses SGD allows it to be applied to staggeringly large data sets.
+Its use of the hashing trick enables its use on extremely large feature sets--- trillions of unique features are not out of the question, although they may be overkill for practical use!
+
+HHGA is implemented as a core utility in C++, `hhga`, as well as a wrapper script that enables the labeling of a VCF file with a truth set.
+The output file from this script can then be fed into `vw` to generate a model. This model then can be applied to other `hhga`-transformed data, and finally the labeled result may be transformed back into VCF.
+Effectively, this allows us to use the model we train as the core of a generic variant caller and genotyper that is driven by candidates produced by a variant caller like freebayes, samtools, platypus, or the GATK.
+
+Let's train a model on 20p12.2 (the neighboring band to 20p12.1). We'll then apply it to 20p12.1 to see if we can best the hard filters we tested in the previous section.
+
+First, we download the region using samtools:
 
 ```bash
-# makes a 100kb fasta sequence from E. coli K12
-samtools faidx E.coli_K12_MG1655.fa NC_000913.3:1000000-1100000 >NC_000913.3:1000000-1100000.fa
-# index it
-samtools faidx NC_000913.3:1000000-1100000.fa
+samtools view -b ftp://ftp-trace.ncbi.nih.gov/giab/ftp/technical/NA12878_data_other_projects/alignment/XPrize_Illumina_WG.bam 20:9200000-12100000 >NA12878.20p12.2.XPrize.bam
+samtools index NA12878.20p12.2.XPrize.bam
 ```
 
-Now we can simulate genomes using mutatrix.
+Now subset the truth set to 20p12.2:
 
 ```bash
-mutatrix -S sample -p 2 -n 10 NC_000913.3:1000000-1100000.fa | bgzip >answers.vcf.gz
-tabix -p vcf answers.vcf.gz
+zcat union13callableMQonlymerged_addcert_nouncert_excludesimplerep_excludesegdups_excludedecoy_excludeRepSeqSTRs_noCNVs_v2.19_2mindatasets_5minYesNoRatio.bed.gz | grep ^20 >giab_callable.chr20.bed
+tabix -h NISTIntegratedCalls_14datasets_131103_allcall_UGHapMerge_HetHomVarPASS_VQSRv2.19_2mindatasets_5minYesNoRatio_all_nouncert_excludesimplerep_excludesegdups_excludedecoy_excludeRepSeqSTRs_noCNVs.vcf.gz 20:9200000-12100000 \
+    | bgzip >NIST_NA12878_20p12.2.vcf.gz
+tabix -p vcf NIST_NA12878_20p12.2.vcf.gz
 ```
 
-[This example may be helpful to see how the whole thing works](https://github.com/ekg/mutatrix/blob/master/freebayes_mosaik_simulation.sh).
+And call variants using `freebayes`:
 
-### A simulated population
+```bash
+freebayes -f hs37d5.fa NA12878.20p12.2.XPrize.bam | bgzip >NA12878.20p12.2.XPrize.vcf.gz
+tabix -p vcf NA12878.20p12.2.XPrize.vcf.gz
+```
 
-### Polyploids and pooled sequencing contexts
+We can now generate the approprate input to `vw` for training by using the `hhga_region` script provided in the `hhga` distribution:
+
+bash```
+hhga_region \
+    -r 20:9200000-12100000 \
+    -w 32 \
+    -W 128 \
+    -x 20 \
+    -f hs37d5.fa \
+    -T NIST_NA12878_20p12.2.vcf.gz \
+    -B giab_callable.chr20.bed.gz \
+    -b NA12878.20p12.2.XPrize.bam \
+    -v NA12878.20p12.2.XPrize.vcf.gz \
+    -o 20p12.2 \
+    -C 3 \
+    -E 0.1 \
+    -S NA12878
+```
+
+Each line in the output file `20p12.2/20:9200000-12100000.hhga.gz` contains the "true" genotype as the label. We allow up to 7 alleles, allowing 120 different diploid genotypes--- thus we should see numbers up to 120 at the start of each line. The rest of the line contains a number of feature spaces, each of which captures information from a particular source relevant to variant calling. The feature spaces are:
+
+```
+ref          # the reference sequence
+hap*         # the alleles in the VCF record
+geno*        # the genotype called in the VCF record
+aln*         # the alignments sorted by affinity for each allele
+col*         # the alignment matrix transposed
+match*       # a match score between each alignment and allele
+qual*        # qualty-scaled match score
+properties*  # alignment properties from bam
+kgraph       # variation graph alignment weights
+software     # annotations in the VCF file from the variant caller
+```
+
+We now can build models using `vw` that learn the mapping between these different feature spaces and the genotype. Because we can have a large number of different classes, we use the "error correcting tournament", enabled via the `--ect` argument. Otherwise, we build a model by selecting the feature spaces to consider using `--keep`, followed by a list of the namespaces by the first letter of their name. For instance:
+
+```bash
+vw --ect 120 \
+   -d 20p12.2/20:9200000-12100000.hhga.gz \
+   -ck \
+   --passes 20 \
+   --keep s \
+   -f soft.model
+```
+
+This would learn a model based only on the software features and save it in `soft.model`. In effect, we would be learning a kind of one againt all regression for each possible class label (genotype) based only on the features that freebayes provides in the QUAL and INFO columns of the VCF file. Of note, the `--passes 20` argument tells vw to make up to 20 passes over the data using SGD to learn a regressor, while `-ck` tells vw to use caching to speed this iteration up and to kill any pre-made caches. As `vw` runs it prints an estimate of its performance by holding out some of the data and testing the model against it at every iteration. If it stops improving on the holdout, it will stop iterating. This, like virtually every aspect of `vw`, is configurable.
+
+The above model is good for 3% error, but we can do better by adding feature spaces and ineractions between them. We can also change the learning model in various ways. We might try adding nonlinearities, such as a neural network (`--nn 10`).
+
+Interactions are particularly important, as they allow us to generate feature spaces for all combinations of other feature spaces. For instance, we might cross the software features with themselves, generating a new feature for every pair of software features. This could be important if we tend to see certain errors or genotypes when pairs of software features move in a correlated way. (We can specify this interaction as `-q ss`.)
+
+Here is a slightly better model that uses more of the feature spaces provided by `hhga`. Including the alignments allows us to learn directly from the raw input to the variant caller. The `match` namespace provides a compressed description of the relationship between every alignment and every allele, while the `kgraph` namespace provides a high-level overview of the set of alignments versus the set of alleles, assuming we've realigned them to a graph that includes all the alleles so as to minimize local alignment bias. The large number of interaction terms are essential for good performance:
+
+```bash
+vw --ect 120 \
+   -d 20p12.2/20:9200000-12100000.hhga.gz \
+   -ck \
+   --passes 20 \
+   --keep kmsa
+   -q kk -q km -q mm -q ms -q ss \
+   -f kmsa.model
+```
+
+This achieves 1.2% loss on the held out portion of the data.
+
+We can now test it on 20p12.1 by running `hhga` to generate unlabeled transformations of our results from `freebayes`, labeling these by running `vw` in prediction mode, and then piping the output back into `hhga`, which can transform the `vw` output into a VCF file. Note that we _must_ not forget to add `--keep kmsa`, as this is not recorded in the model file and omission will result in poor performance.
+
+```bash
+hhga -b NA12878.20p12.1.XPrize.bam -v NA12878.20p12.1.XPrize.norm.vcf.gz -f hs37d5.fa \
+    -C 3 -E 0.1 -w 32 -W 128 -x 20 \
+    | vw --quiet -t -i kmsa.model --keep kmsa -p /dev/stdout \
+    | hhga -G -S NA12878 \
+    | bgzip >NA12878.20p12.1.XPrize.norm.hhga.vcf.gz
+```
+
+### RTG-eval
+
+The best variant calling comparison and evaluation framework in current use was developed by Real Time Genomics, and has since been open sourced and repackaged into [rtgeval](https://github.com/lh3/rtgeval) by Heng Li. This package was subsequently used for the basis of comparison in the PrecisionFDA challenges in 2016, for which `hhga` was initially developed.
+
+We can easily apply `rtgeval` to our results, but we will need to prepare the reference in RTG's "SDF" format first.
+
+```bash
+rtg format -o hs37d5.sdf hs37d5.fa
+```
+
+Now we can proceed and test the performance of our previous `hhga` run against the GiAB truth set:
+
+```bash
+run-eval -o eval1 -s hs37d5.sdf -b giab_callable.chr20.bed \
+    NIST_NA12878_20p12.1.vcf.gz NA12878.20p12.1.XPrize.norm.hhga.vcf.gz
+```
+
+The output of `rtgeval` is a set of reports and files tallying true and false positives.
+
+```
+# for alleles
+Running allele evaluation (rtg vcfeval --squash-ploidy)...
+Threshold  True-pos  False-pos  False-neg  Precision  Sensitivity  F-measure
+----------------------------------------------------------------------------
+None      8120        139        324     0.9832       0.9616     0.9723
+
+# for genotypes
+Running allele evaluation (rtg vcfeval)...
+Threshold  True-pos  False-pos  False-neg  Precision  Sensitivity  F-measure
+----------------------------------------------------------------------------
+None      8085        176        359     0.9787       0.9575     0.9680
+```
+
+In this case, we can get a quick overview by looking in the files and directories prefixed by `eval1`. It is also quick to clean up with `rm -rf eval1.*`. _Make sure you clean up before re-running on a new file, or use a different prefix!_
+
+## Part 5: Genome variation graphs
+
+Variation graphs are a data structure that enables a powerful set of techniques which completely remove reference bias from resequencing analysis by embedding information about variation directly into the reference.
+In these patterns, the reference is properly understood as a graph.
+Nodes and edges describe sequences and allowed linkages, and paths through the graph represent the sequences of genomes that have been used to construct the system.
+
+TODO
 
 ## errata
 
-If you're part of the Biology for Adaptation genomics course, [here is a shared document describing system-specific information about available data sets and binaries](http://goo.gl/JvNIRv).
+If you're part of the Biology for Adaptation genomics course, [here is a shared document describing system-specific information about available data sets and binaries](https://docs.google.com/document/d/1QD_nM2of_rND_gN6jfcJChjzMMB7MIJ2xovNpk5WVV0/edit?usp=sharing).
