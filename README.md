@@ -529,7 +529,7 @@ vw --ect 120 \
    -d 20p12.2/20:9200000-12100000.hhga.gz \
    -ck \
    --passes 20 \
-   --keep kmsa
+   --keep kmsa \
    -q kk -q km -q mm -q ms -q ss \
    -f kmsa.model
 ```
