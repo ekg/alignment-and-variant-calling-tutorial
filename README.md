@@ -186,7 +186,7 @@ Now, run the same alignment process for the O104:H4 strain's data. Make sure to 
 bwa mem -t $threads -R '@RG\tID:O104_H4\tSM:O104_H4' \
     E.coli_K12_MG1655.fa SRR341549_1.fastq.gz  SRR341549_2.fastq.gz \
     | samtools view -Shu - \
-    | sambamba sort /dev/stdin -o /dev/stdout >SRR341549.raw.bam
+    | sambamba sort /dev/stdin -o SRR341549.raw.bam
 sambamba markdup SRR341549.raw.bam SRR341549.bam
 ```
 
@@ -583,11 +583,61 @@ In this case, we can get a quick overview by looking in the files and directorie
 
 ## Part 5: Genome variation graphs
 
-Variation graphs are a data structure that enables a powerful set of techniques which completely remove reference bias from resequencing analysis by embedding information about variation directly into the reference.
+Variation graphs are a data structure that enables a powerful set of techniques which dramatically reduce reference bias in resequencing analysis by embedding information about variation directly into the reference.
 In these patterns, the reference is properly understood as a graph.
 Nodes and edges describe sequences and allowed linkages, and paths through the graph represent the sequences of genomes that have been used to construct the system.
 
-TODO
+In this section, we will walk through a basic resequencing pipeline, replacing operations implemented on the linear reference with ones that are based around a graph data model.
+
+First, we construct a variation graph using a [megabase long fragment of the 1000 Genomes Phase 3 release that's included in the `vg` repository](https://github.com/vgteam/vg/tree/master/test/1mb1kgp).
+
+```bash
+vg construct -r 1mb1kgp/z.fa -v 1mb1kgp/z.vcf.gz -m 32 -p >z.vg
+```
+
+Having constructed the graph, we can take a look at it using a [GFA](https://github.com/GFA-spec/GFA-spec) output format in `vg view`.
+
+```bash
+vg view z.vg | head
+```
+
+The output shows nodes, edges, and path elements that thread the reference through the graph:
+
+```text
+H       VN:Z:1.0
+S       1       TGGGAGAGA
+P       1       z       1       +       9M
+L       1       +       2       +       0M
+L       1       +       3       +       0M
+S       2       T
+L       2       +       4       +       0M
+S       3       A
+P       3       z       2       +       1M
+L       3       +       4       +       0M
+```
+
+To implement high-throughput operations on the graph, we use a variety of indexes. The two most important ones for read alignment are the [xg](https://github.com/vgteam/xg) and [gcsa2](https://github.com/jltsiren/gcsa2) indexes. `xg` provides a succinct, but immutable index of the graph that allows high-performance queries of various attributes of the graph--- such as neighborhood searches and queries relating to the reference sequences that are embedded in the graph. Meanwhile, `GCSA2` provides a full generalization of the FM-index to sequence graphs. GCSA2 indexes a de Bruijn graph generated from our underlying variation graph.
+
+```bash
+vg index -x z.xg -g z.gcsa -k 16 -p z.vg
+```
+
+This will generate the xg index and a 128-mer GCSA2 index.
+
+Now, we can simulate reads from the graph and align them back.
+
+```bash
+vg sim -n 10000 -l 100 -e 0.01 -i 0.002 -x z.xg -a >z.sim
+```
+
+Aligning them back is straightforward:
+
+```bash
+vg map -x z.xg -g z.gcsa -G z.sim >z.gam
+```
+
+We are then able to look at our alignments (in JSON format) using `vg view -a z.gam | less`.
+
 
 ## errata
 
