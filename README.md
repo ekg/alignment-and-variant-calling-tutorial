@@ -650,3 +650,4 @@ We are then able to look at our alignments (in JSON format) using `vg view -a z.
 ## errata
 
 If you're part of the 2018 Biology for Adaptation genomics course, [here is a shared document describing system-specific information about available data sets and binaries](https://docs.google.com/document/d/1CV3AUackPEaSw7GkY6f7Q5lnlTVeWkyh6IOrB4jQwMg/edit?usp=sharing).
+The [day's lecture slides](https://docs.google.com/presentation/d/1t921ccF66N0_oyn09gbM0w8nzADzWF20rfZkeMv3Sy8/edit?usp=sharing) are also available.
