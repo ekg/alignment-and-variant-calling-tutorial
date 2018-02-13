@@ -167,34 +167,46 @@ You can now run the alignment using a piped approach. _Replace `$threads` with t
 ```bash
 bwa mem -t $threads -R '@RG\tID:K12\tSM:K12' \
     E.coli_K12_MG1655.fa SRR1770413_1.fastq.gz SRR1770413_2.fastq.gz \
-    | samtools view -Shu - \
-    | sambamba sort /dev/stdin -o SRR1770413.raw.bam
-sambamba markdup SRR1770413.raw.bam SRR1770413.bam
+    | samtools view -b - >SRR1770413.raw.bam
+sambamba sort SRR1770413.raw.bam
+sambamba markdup SRR1770413.raw.sorted.bam SRR1770413.bam
 ```
 
 Breaking it down by line:
 
 - *alignment with bwa*: `bwa mem -t $threads -R '@RG\tID:K12\tSM:K12'` --- this says "align using so many threads" and also "give the reads the read group K12 and the sample name K12"
 - *reference and FASTQs* `E.coli_K12_MG1655.fa SRR1770413_1.fastq.gz SRR1770413_2.fastq.gz` --- this just specifies the base reference file name (`bwa` finds the indexes using this) and the input alignment files. The first file should contain the first mate, the second file the second mate.
-- *conversion to BAM*: `samtools view -Shu -` --- this reads SAM from stdin (`-S` and the `-` specifier in place of the file name indicate this) and converts to uncompressed BAM (there isn't need to compress, as it's just going to be parsed by the next program in the pipeline.
-- *sorting the BAM file*: `sambamba sort /dev/stdin -o /dev/stdout` --- sort the BAM file, reading from stdin and writing to stdout. We then use shell redirection to write it to a file, but you could put tools that can work on streams directly after this step.
-- *marking PCR duplicates*: `sambamba markdup SRR1770413.raw.bam SRR1770413.bam` --- this marks reads which appear to be redundant PCR duplicates based on their read mapping position. It [uses the same criteria for marking duplicates as picard](http://lomereiter.github.io/sambamba/docs/sambamba-markdup.html).
+- *conversion to BAM*: `samtools view -b -` --- this reads SAM from stdin (the `-` specifier in place of the file name indicates this) and converts to BAM.
+- *sorting the BAM file*: `sambamba sort SRR1770413.raw.bam` --- sort the BAM file, writing it to `.sorted.bam`.
+- *marking PCR duplicates*: `sambamba markdup SRR1770413.raw.sorted.bam SRR1770413.bam` --- this marks reads which appear to be redundant PCR duplicates based on their read mapping position. It [uses the same criteria for marking duplicates as picard](http://lomereiter.github.io/sambamba/docs/sambamba-markdup.html).
 
 Now, run the same alignment process for the O104:H4 strain's data. Make sure to specify a different sample name via the `-R '@RG...` flag incantation to specify the identity of the data in the BAM file header and in the alignment records themselves:
 
 ```bash
 bwa mem -t $threads -R '@RG\tID:O104_H4\tSM:O104_H4' \
     E.coli_K12_MG1655.fa SRR341549_1.fastq.gz  SRR341549_2.fastq.gz \
-    | samtools view -Shu - \
-    | sambamba sort /dev/stdin -o SRR341549.raw.bam
-sambamba markdup SRR341549.raw.bam SRR341549.bam
+    | samtools view -b - >SRR341549.raw.bam
+sambamba sort SRR341549.raw.bam
+sambamba markdup SRR341549.raw.sorted.bam SRR341549.bam
 ```
 
-As a standard post-processing step, it's helpful to add a BAM index to the files. This let's us jump around in them quickly using BAM compatible tools that can read the index. `sambamba` does this for us by default, but if it hadn't we could use samtools to achieve exactly the same index.
+As a standard post-processing step, it's helpful to add a BAM index to the files. This let's us jump around in them quickly using BAM compatible tools that can read the index. `sambamba` does this for us by default, but if it hadn't or we had used a different process to generate the BAM files, we could use samtools to achieve exactly the same index.
 
 ```bash
 samtools index SRR1770413.bam
 samtools index SRR341549.bam
+```
+
+### Using minimap2
+
+It's easy to use `minimap2` instead of `bwa mem`. This may help in some contexts, as it can be several fold faster with minimal reduction in alignment quality. In the case of these short reads, we'd use it as follows. The only major change from bwa mem is that we'll tell it we're working with short read data using `-ax sr`:
+
+```bash
+minimap2 -ax sr -t $threads -R '@RG\tID:O104_H4\tSM:O104_H4' \
+    E.coli_K12_MG1655.fa SRR341549_1.fastq.gz  SRR341549_2.fastq.gz \
+    | samtools view -b - >SRR341549.raw.minimap2.bam
+sambamba sort SRR341549.raw.minimap2.bam
+sambamba markdup SRR341549.raw.sorted.minimap2.bam SRR341549.minimap2.bam
 ```
 
 ## Part 2: Calling variants
@@ -287,11 +299,11 @@ For serious applications, it's not sufficient to simply filter on the basis of b
 
 Luckily, a group at the [National Institute of Standards and Technology](https://en.wikipedia.org/wiki/National_Institute_of_Standards_and_Technology) (NIST) has developed a kind of truth set based on the [HapMap CEU cell line NA12878](https://catalog.coriell.org/0/Sections/Search/Sample_Detail.aspx?Ref=GM12878). It's called the [Genome in a Bottle](https://sites.stanford.edu/abms/giab). In addition to characterizing the genome of this cell line using extensive sequencing and manual curation of inconsistencies found between sequencing protocols, the group actually distributes reference material from the cell line for use in validating sequencing pipelines.
 
-To download the truth set, head over to the [Genome in a Bottle ftp site](ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/NA12878_HG001/) and pick up the latest release. As of writing this, we're at [GiAB v2.19](ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/NA12878_HG001/NISTv2.19/). Download the highly confident calls and the callable region targets:
+To download the truth set, head over to the [Genome in a Bottle ftp site](ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/NA12878_HG001/) and pick up the latest release. As of writing this, we're at [GiAB v3.3.2](ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/NA12878_HG001/NISTv3.3.2/). Download the highly confident calls and the callable region targets:
 
 ```bash
-wget ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/NA12878_HG001/NISTv2.19/NISTIntegratedCalls_14datasets_131103_allcall_UGHapMerge_HetHomVarPASS_VQSRv2.19_2mindatasets_5minYesNoRatio_all_nouncert_excludesimplerep_excludesegdups_excludedecoy_excludeRepSeqSTRs_noCNVs.vcf.gz
-wget ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/NA12878_HG001/NISTv2.19/union13callableMQonlymerged_addcert_nouncert_excludesimplerep_excludesegdups_excludedecoy_excludeRepSeqSTRs_noCNVs_v2.19_2mindatasets_5minYesNoRatio.bed.gz
+wget ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/NA12878_HG001/NISTv3.3.2/GRCh37/HG001_GRCh37_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-X_v.3.3.2_highconf_PGandRTGphasetransfer.vcf.gz{,.tbi}
+wget ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/NA12878_HG001/NISTv3.3.2/GRCh37/HG001_GRCh37_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-X_v.3.3.2_highconf_nosomaticdel.bed
 ```
 
 ### The human reference
@@ -306,20 +318,20 @@ samtools faidx hs37d5.fa
 
 ### Calling variants in [20p12.1](http://genome-euro.ucsc.edu/cgi-bin/hgTracks?db=hg19&lastVirtModeType=default&lastVirtModeExtraState=&virtModeType=default&virtMode=0&nonVirtPosition=&position=chr20%3A12100001-17900000&hgsid=220600397_Vs2XvVv0rRPE9lPwepHAL4Iq3ndi)
 
-To keep things quick enough for the tutorial, let's grab a little chunk of an NA12878 dataset. Let's use [20p12.1](http://genome-euro.ucsc.edu/cgi-bin/hgTracks?db=hg19&lastVirtModeType=default&lastVirtModeExtraState=&virtModeType=default&virtMode=0&nonVirtPosition=&position=chr20%3A12100001-17900000&hgsid=220600397_Vs2XvVv0rRPE9lPwepHAL4Iq3ndi).
+To keep things quick enough for the tutorial, let's grab a little chunk of an NA12878 dataset. Let's use [20p12.1](http://genome-euro.ucsc.edu/cgi-bin/hgTracks?db=hg19&lastVirtModeType=default&lastVirtModeExtraState=&virtModeType=default&virtMode=0&nonVirtPosition=&position=chr20%3A12100001-17900000&hgsid=220600397_Vs2XvVv0rRPE9lPwepHAL4Iq3ndi). We'll use a downsampled alignment made from Illumina HiSeq sequencing of NA12878 (HG001) that was used as an input to the [NIST Genome in a Bottle](https://github.com/genome-in-a-bottle) truth set for this sample. (Other relevant data can be found in the [GiAB alignment indexes](https://github.com/genome-in-a-bottle/giab_data_indexes).)
 
 We don't need to download the entire BAM file to do this. `samtools` can download the BAM index (`.bai`) provided it hosted alongside the file on the HTTP/FTP server and then use this to jump to a particular target in the remote file.
 
 ```bash
-samtools view -b ftp://ftp-trace.ncbi.nih.gov/giab/ftp/technical/NA12878_data_other_projects/alignment/XPrize_Illumina_WG.bam 20:12100000-17900000 >NA12878.20p12.1.XPrize.bam
-samtools index NA12878.20p12.1.XPrize.bam
+samtools view -b ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/data/NA12878/NIST_NA12878_HG001_HiSeq_300x/RMNISTHS_30xdownsample.bam 20:12100000-17900000 >NA12878.20p12.1.30x.bam
+samtools index NA12878.20p12.1.30x.bam
 ```
 
 We can call variants as before. Note that we drop the `--ploidy 1` flag. `freebayes` assumes its input is diploid by default. We can use bgzip in-line here to save the extra command for compression.
 
 ```bash
-freebayes -f hs37d5.fa NA12878.20p12.1.XPrize.bam | bgzip >NA12878.20p12.1.XPrize.vcf.gz
-tabix -p vcf NA12878.20p12.1.XPrize.vcf.gz
+freebayes -f hs37d5.fa NA12878.20p12.1.30x.bam | bgzip >NA12878.20p12.1.30x.vcf.gz
+tabix -p vcf NA12878.20p12.1.30x.vcf.gz
 ```
 
 ### Comparing our results to the GiAB truth set
@@ -332,30 +344,27 @@ First, we'll prepare a reduced representation of this dataset to match 20p12.1:
 
 ```bash
 # subset the callable regions to chr20 (makes intersection much faster)
-zcat union13callableMQonlymerged_addcert_nouncert_excludesimplerep_excludesegdups_excludedecoy_excludeRepSeqSTRs_noCNVs_v2.19_2mindatasets_5minYesNoRatio.bed.gz | grep ^20 >giab_callable.chr20.bed
+cat HG001_GRCh37_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-X_v.3.3.2_highconf_nosomaticdel.bed | grep ^20 >giab_callable.chr20.bed
 
-# index the high-confidence calls
-tabix -p vcf NISTIntegratedCalls_14datasets_131103_allcall_UGHapMerge_HetHomVarPASS_VQSRv2.19_2mindatasets_5minYesNoRatio_all_nouncert_excludesimplerep_excludesegdups_excludedecoy_excludeRepSeqSTRs_noCNVs.vcf.gz
-
-# and subset them to 20p12.1
-tabix -h NISTIntegratedCalls_14datasets_131103_allcall_UGHapMerge_HetHomVarPASS_VQSRv2.19_2mindatasets_5minYesNoRatio_all_nouncert_excludesimplerep_excludesegdups_excludedecoy_excludeRepSeqSTRs_noCNVs.vcf.gz 20:12100000-17900000 \
-    | bgzip >NIST_NA12878_20p12.1.vcf.gz
+# subset the high confidence calls to 20p12.1 and rename the sample to match the BAM
+tabix -h HG001_GRCh37_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-X_v.3.3.2_highconf_PGandRTGphasetransfer.vcf.gz 20:12100000-17900000 \
+    | sed s/HG001/NA12878/ | bgzip >NIST_NA12878_20p12.1.vcf.gz
 tabix -p vcf NIST_NA12878_20p12.1.vcf.gz
 ```
 
 Now, we can compare our results to the calls to get a list of potentially failed sites.
 
 ```bash
-vcfintersect -r hs37d5.fa -v -i NIST_NA12878_20p12.1.vcf.gz NA12878.20p12.1.XPrize.vcf.gz \
+vcfintersect -r hs37d5.fa -v -i NIST_NA12878_20p12.1.vcf.gz NA12878.20p12.1.30x.vcf.gz \
     | vcfintersect -b giab_callable.chr20.bed \
-    | bgzip >NA12878.20p12.1.XPrize.giab_failed.vcf.gz
-tabix -p vcf NA12878.20p12.1.XPrize.giab_failed.vcf.gz
+    | bgzip >NA12878.20p12.1.30x.giab_failed.vcf.gz
+tabix -p vcf NA12878.20p12.1.30x.giab_failed.vcf.gz
 ```
 
 We can now examine these using `vt peek` and `vcfstats`, or manually by inspecting them either serially:
 
 ```bash
-zcat NA12878.20p12.1.XPrize.giab_failed.vcf.gz | less -S
+zcat NA12878.20p12.1.30x.giab_failed.vcf.gz | less -S
 ```
 
 ... or by looking at loci which fail in `samtools tview`.
@@ -379,9 +388,10 @@ There are two main problems:
 Finally, the variants in the GiAB set have been normalized using a similar process, and doing so will ensure there are not any discrepancies when we compare.
 
 ```bash
-vcfallelicprimitives -kg NA12878.20p12.1.XPrize.vcf.gz \
+vcfallelicprimitives -kg NA12878.20p12.1.30x.vcf.gz \
     | vt normalize -r hs37d5.fa - \
-    | bgzip >NA12878.20p12.1.XPrize.norm.vcf.gz
+    | bgzip >NA12878.20p12.1.30x.norm.vcf.gz
+tabix -p vcf NA12878.20p12.1.30x.norm.vcf.gz
 ```
 
 Here, `vcfallelicprimitives -kp` decomposes any haplotype calls from `freebayes`, keeping the genotype and site level annotation. (This isn't done by default because in some contexts doing so is inappropriate.) Then `vt normalize` ensures the variants are left-aligned. This isn't important for the comparison, as `vcfintersect` is haplotype-based, so it isn't affected by small differences in the positioning or descripition of single alleles, but it is good practice.
@@ -389,10 +399,10 @@ Here, `vcfallelicprimitives -kp` decomposes any haplotype calls from `freebayes`
 We can now compare the results again:
 
 ```bash
-vcfintersect -r hs37d5.fa -v -i NIST_NA12878_20p12.1.vcf.gz NA12878.20p12.1.XPrize.norm.vcf.gz \
+vcfintersect -r hs37d5.fa -v -i NIST_NA12878_20p12.1.vcf.gz NA12878.20p12.1.30x.norm.vcf.gz \
     | vcfintersect -b giab_callable.chr20.bed \
-    | bgzip >NA12878.20p12.1.XPrize.norm.giab_failed.vcf.gz
-tabix -p vcf NA12878.20p12.1.XPrize.norm.giab_failed.vcf.gz
+    | bgzip >NA12878.20p12.1.30x.norm.giab_failed.vcf.gz
+tabix -p vcf NA12878.20p12.1.30x.norm.giab_failed.vcf.gz
 ```
 
 Here we observe why normalization is important when comparing VCF files. Fortunately, the best package available for comparing variant calls to truth sets, [rtgeval](https://github.com/lh3/rtgeval), addresses exactly this concern, and also breaks comparisons into three parts matching the three types of information provided by the VCF file--- positional, allele, and genotype. We'll get into that in the next section when we learn to genotype and filter.
@@ -404,24 +414,24 @@ The failed list provides a means to examine ways to reduce our false positive ra
 For example, we can test how many of the failed SNPs are removed by applying a simple quality filter and checking the output file's statistics.
 
 ```bash
-vcffilter -f "QUAL > 10" NA12878.20p12.1.XPrize.norm.giab_failed.vcf.gz \
+vcffilter -f "QUAL > 10" NA12878.20p12.1.30x.norm.giab_failed.vcf.gz \
     | vt peek -
 ```
 
 We might also want to measure our sensitivity from different strategies. To do this, just invert the call to `vcfintersect` by removing the `-v` flag (which tells it to invert):
 
 ```bash
-vcfintersect -r hs37d5.fa -i NIST_NA12878_20p12.1.vcf.gz NA12878.20p12.1.XPrize.norm.vcf.gz \
+vcfintersect -r hs37d5.fa -i NIST_NA12878_20p12.1.vcf.gz NA12878.20p12.1.30x.norm.vcf.gz \
     | vcfintersect -b giab_callable.chr20.bed \
-    | bgzip >NA12878.20p12.1.XPrize.norm.giab_passed.vcf.gz
-tabix -p vcf NA12878.20p12.1.XPrize.norm.giab_passed.vcf.gz
+    | bgzip >NA12878.20p12.1.30x.norm.giab_passed.vcf.gz
+tabix -p vcf NA12878.20p12.1.30x.norm.giab_passed.vcf.gz
 ```
 
 Now we can test how many variants remain after using the same filters on both:
 
 ```bash
-vcffilter -f "QUAL / AO > 10 & SAF > 0 & SAR > 0" NA12878.20p12.1.XPrize.norm.giab_passed.vcf.gz | wc -l
-vcffilter -f "QUAL / AO > 10 & SAF > 0 & SAR > 0" NA12878.20p12.1.XPrize.norm.giab_failed.vcf.gz | wc -l
+vcffilter -f "QUAL / AO > 10 & SAF > 0 & SAR > 0" NA12878.20p12.1.30x.norm.giab_passed.vcf.gz | vt peek -
+vcffilter -f "QUAL / AO > 10 & SAF > 0 & SAR > 0" NA12878.20p12.1.30x.norm.giab_failed.vcf.gz | vt peek -
 ```
 
 
@@ -449,24 +459,24 @@ Let's train a model on 20p12.2 (the neighboring band to 20p12.1). We'll then app
 First, we download the region using samtools:
 
 ```bash
-samtools view -b ftp://ftp-trace.ncbi.nih.gov/giab/ftp/technical/NA12878_data_other_projects/alignment/XPrize_Illumina_WG.bam 20:9200000-12100000 >NA12878.20p12.2.XPrize.bam
-samtools index NA12878.20p12.2.XPrize.bam
+samtools view -b ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/data/NA12878/NIST_NA12878_HG001_HiSeq_300x/RMNISTHS_30xdownsample.bam 20:9200000-12100000 >NA12878.20p12.2.30x.bam
+samtools index NA12878.20p12.2.30x.bam
 ```
 
 Now subset the truth set to 20p12.2:
 
 ```bash
-zcat union13callableMQonlymerged_addcert_nouncert_excludesimplerep_excludesegdups_excludedecoy_excludeRepSeqSTRs_noCNVs_v2.19_2mindatasets_5minYesNoRatio.bed.gz | grep ^20 >giab_callable.chr20.bed
-tabix -h NISTIntegratedCalls_14datasets_131103_allcall_UGHapMerge_HetHomVarPASS_VQSRv2.19_2mindatasets_5minYesNoRatio_all_nouncert_excludesimplerep_excludesegdups_excludedecoy_excludeRepSeqSTRs_noCNVs.vcf.gz 20:9200000-12100000 \
-    | bgzip >NIST_NA12878_20p12.2.vcf.gz
+cat HG001_GRCh37_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-X_v.3.3.2_highconf_nosomaticdel.bed | grep ^20 >giab_callable.chr20.bed
+tabix -h HG001_GRCh37_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-X_v.3.3.2_highconf_PGandRTGphasetransfer.vcf.gz 20:9200000-12100000 \
+    | sed s/HG001/NA12878/ | bgzip >NIST_NA12878_20p12.2.vcf.gz
 tabix -p vcf NIST_NA12878_20p12.2.vcf.gz
 ```
 
 And call variants using `freebayes`:
 
 ```bash
-freebayes -f hs37d5.fa NA12878.20p12.2.XPrize.bam | bgzip >NA12878.20p12.2.XPrize.vcf.gz
-tabix -p vcf NA12878.20p12.2.XPrize.vcf.gz
+freebayes -f hs37d5.fa NA12878.20p12.2.30x.bam | bgzip >NA12878.20p12.2.30x.vcf.gz
+tabix -p vcf NA12878.20p12.2.30x.vcf.gz
 ```
 
 We can now generate the approprate input to `vw` for training by using the `hhga_region` script provided in the `hhga` distribution:
@@ -479,9 +489,9 @@ hhga_region \
     -x 20 \
     -f hs37d5.fa \
     -T NIST_NA12878_20p12.2.vcf.gz \
-    -B giab_callable.chr20.bed.gz \
-    -b NA12878.20p12.2.XPrize.bam \
-    -v NA12878.20p12.2.XPrize.vcf.gz \
+    -B giab_callable.chr20.bed \
+    -b NA12878.20p12.2.30x.bam \
+    -v NA12878.20p12.2.30x.vcf.gz \
     -o 20p12.2 \
     -C 3 \
     -E 0.1 \
@@ -532,16 +542,16 @@ vw --ect 120 \
    -f kmsa.model
 ```
 
-This achieves 1.2% loss on the held out portion of the data.
+This achieves 0.2% loss on the held out portion of the data.
 
 We can now test it on 20p12.1 by running `hhga` to generate unlabeled transformations of our results from `freebayes`, labeling these by running `vw` in prediction mode, and then piping the output back into `hhga`, which can transform the `vw` output into a VCF file. Note that we _must_ not forget to add `--keep kmsa`, as this is not recorded in the model file and omission will result in poor performance.
 
 ```bash
-hhga -b NA12878.20p12.1.XPrize.bam -v NA12878.20p12.1.XPrize.norm.vcf.gz -f hs37d5.fa \
+hhga -b NA12878.20p12.1.30x.bam -v NA12878.20p12.1.30x.norm.vcf.gz -f hs37d5.fa \
     -C 3 -E 0.1 -w 32 -W 128 -x 20 \
     | vw --quiet -t -i kmsa.model --keep kmsa -p /dev/stdout \
     | hhga -G -S NA12878 \
-    | bgzip >NA12878.20p12.1.XPrize.norm.hhga.vcf.gz
+    | bgzip >NA12878.20p12.1.30x.norm.hhga.vcf.gz
 ```
 
 ### RTG-eval
@@ -558,7 +568,7 @@ Now we can proceed and test the performance of our previous `hhga` run against t
 
 ```bash
 run-eval -o eval1 -s hs37d5.sdf -b giab_callable.chr20.bed \
-    NIST_NA12878_20p12.1.vcf.gz NA12878.20p12.1.XPrize.norm.hhga.vcf.gz
+    NIST_NA12878_20p12.1.vcf.gz NA12878.20p12.1.30x.norm.hhga.vcf.gz
 ```
 
 The output of `rtgeval` is a set of reports and files tallying true and false positives.
@@ -639,4 +649,4 @@ We are then able to look at our alignments (in JSON format) using `vg view -a z.
 
 ## errata
 
-If you're part of the Biology for Adaptation genomics course, [here is a shared document describing system-specific information about available data sets and binaries](https://docs.google.com/document/d/1QD_nM2of_rND_gN6jfcJChjzMMB7MIJ2xovNpk5WVV0/edit?usp=sharing).
+If you're part of the 2018 Biology for Adaptation genomics course, [here is a shared document describing system-specific information about available data sets and binaries](https://docs.google.com/document/d/1CV3AUackPEaSw7GkY6f7Q5lnlTVeWkyh6IOrB4jQwMg/edit?usp=sharing).
