@@ -289,11 +289,11 @@ vcffilter -f 'QUAL > 10' SRR1770413.vcf.gz | vt peek -
 vcffilter -f 'QUAL / AO > 10' SRR1770413.vcf.gz | vt peek -
 ```
 
-Note that the second filtering removes a large region near the beginning of the reference where there appears to be some paralogy. The read counts for reference and alternate aare each around half of the total depth, which is unusual for a sequenced clone and may indicate some structural differences between the sample and the original reference.
+Note that the second filtering removes a large region near the beginning of the reference where there appears to be some paralogy. The read counts for reference and alternate are each around half of the total depth, which is unusual for a sequenced clone and may indicate some structural differences between the sample and the original reference.
 
 ## Part 3: When you know the truth
 
-For serious applications, it's not sufficient to simply filter on the basis of bulk metrics like the ts/tv ratio. Some external validation information should be used to guide the development of pipelines for processing genomic data. In our case, we're just using free data from the web, and unless we find some validation data associated with the strains that were sequenced, we can only filter on intuition, bulk metrics like ts/tv, and with an eye for the particular question we're interested in. What we want is to know the trut for a particular context, so as to understand if our filtering criteria make sense.
+For serious applications, it's not sufficient to simply filter on the basis of bulk metrics like the ts/tv ratio. Some external validation information should be used to guide the development of pipelines for processing genomic data. In our case, we're just using free data from the web, and unless we find some validation data associated with the strains that were sequenced, we can only filter on intuition, bulk metrics like ts/tv, and with an eye for the particular question we're interested in. What we want is to know the truth for a particular context, so as to understand if our filtering criteria make sense.
 
 ### The NIST Genome in a Bottle truth set for NA12878
 
