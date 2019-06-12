@@ -394,7 +394,7 @@ vcfallelicprimitives -kg NA12878.20p12.1.30x.vcf.gz \
 tabix -p vcf NA12878.20p12.1.30x.norm.vcf.gz
 ```
 
-Here, `vcfallelicprimitives -kp` decomposes any haplotype calls from `freebayes`, keeping the genotype and site level annotation. (This isn't done by default because in some contexts doing so is inappropriate.) Then `vt normalize` ensures the variants are left-aligned. This isn't important for the comparison, as `vcfintersect` is haplotype-based, so it isn't affected by small differences in the positioning or description of single alleles, but it is good practice.
+Here, `vcfallelicprimitives -kg` decomposes any haplotype calls from `freebayes`, keeping the genotype and site level annotation. (This isn't done by default because in some contexts doing so is inappropriate.) Then `vt normalize` ensures the variants are left-aligned. This isn't important for the comparison, as `vcfintersect` is haplotype-based, so it isn't affected by small differences in the positioning or description of single alleles, but it is good practice.
 
 We can now compare the results again:
 
