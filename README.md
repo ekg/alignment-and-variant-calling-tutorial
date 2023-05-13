@@ -57,6 +57,8 @@ curl -s http://hypervolu.me/%7Eerik/genomes/E.coli_K12_MG1655.fa | head
 # AGCTTTTCATTCTGACTGCAACGGGCAATATGTCTCTGTGTGGATTAAAAAAAGAGTGTCTGATAGCAGC
 # TTCTGAACTGGTTACCTGCCGTGAGTAAATTAAAATTTTATTGACTTAGGTCACTAAATACTTTAACCAA
 # ...
+# now download and save the genome
+curl -s http://hypervolu.me/%7Eerik/genomes/E.coli_K12_MG1655.fa > E.coli_K12_MG1655.fa
 ```
 
 ### E. Coli K12 Illumina 2x300bp MiSeq sequencing results
@@ -158,15 +160,15 @@ Here's an outline of the steps we'll follow to align our K12 strain against the 
 3. sort the output
 4. mark PCR duplicates that result from exact duplication of a template during amplification
 
-We could the steps one-by-one, generating an intermediate file for each step.
+We could do the steps one-by-one, generating an intermediate file for each step.
 However, this isn't really necessary unless we want to debug the process, and it will make a lot of excess files which will do nothing but confuse us when we come to work with the data later.
 Thankfully, it's easy to use [unix pipes](https://en.wikiepdia.org/wiki/Pipeline_%28Unix%29) to stream most of these tools together (see this [nice thread about piping bwa and samtools together on biostar](https://www.biostars.org/p/43677/) for a discussion of the benefits and possible drawbacks of this).
 
 You can now run the alignment using a piped approach. _Replace `$threads` with the number of CPUs you would like to use for alignment._ Not all steps in `bwa` run in parallel, but the alignment, which is the most time-consuming step, does. You'll need to set this given the available resources you have.
 
 ```bash
-bwa mem -t $threads -R '@RG\tID:K12\tSM:K12' \
-    E.coli_K12_MG1655.fa SRR1770413_1.fastq.gz SRR1770413_2.fastq.gz \
+bwa mem -t 2 -R '@RG\tID:K12\tSM:K12' \
+    E.coli_K12_MG1655.fa SRR1770413_1.fastq SRR1770413_2.fastq \
     | samtools view -b - >SRR1770413.raw.bam
 sambamba sort SRR1770413.raw.bam
 sambamba markdup SRR1770413.raw.sorted.bam SRR1770413.bam
@@ -175,7 +177,7 @@ sambamba markdup SRR1770413.raw.sorted.bam SRR1770413.bam
 Breaking it down by line:
 
 - *alignment with bwa*: `bwa mem -t $threads -R '@RG\tID:K12\tSM:K12'` --- this says "align using so many threads" and also "give the reads the read group K12 and the sample name K12"
-- *reference and FASTQs* `E.coli_K12_MG1655.fa SRR1770413_1.fastq.gz SRR1770413_2.fastq.gz` --- this just specifies the base reference file name (`bwa` finds the indexes using this) and the input alignment files. The first file should contain the first mate, the second file the second mate.
+- *reference and FASTQs* `E.coli_K12_MG1655.fa SRR1770413_1.fastq SRR1770413_2.fastq` --- this just specifies the base reference file name (`bwa` finds the indexes using this) and the input alignment files. The first file should contain the first mate, the second file the second mate.
 - *conversion to BAM*: `samtools view -b -` --- this reads SAM from stdin (the `-` specifier in place of the file name indicates this) and converts to BAM.
 - *sorting the BAM file*: `sambamba sort SRR1770413.raw.bam` --- sort the BAM file, writing it to `.sorted.bam`.
 - *marking PCR duplicates*: `sambamba markdup SRR1770413.raw.sorted.bam SRR1770413.bam` --- this marks reads which appear to be redundant PCR duplicates based on their read mapping position. It [uses the same criteria for marking duplicates as picard](http://lomereiter.github.io/sambamba/docs/sambamba-markdup.html).
@@ -183,8 +185,8 @@ Breaking it down by line:
 Now, run the same alignment process for the O104:H4 strain's data. Make sure to specify a different sample name via the `-R '@RG...` flag incantation to specify the identity of the data in the BAM file header and in the alignment records themselves:
 
 ```bash
-bwa mem -t $threads -R '@RG\tID:O104_H4\tSM:O104_H4' \
-    E.coli_K12_MG1655.fa SRR341549_1.fastq.gz  SRR341549_2.fastq.gz \
+bwa mem -t 2 -R '@RG\tID:O104_H4\tSM:O104_H4' \
+    E.coli_K12_MG1655.fa SRR341549_1.fastq  SRR341549_2.fastq \
     | samtools view -b - >SRR341549.raw.bam
 sambamba sort SRR341549.raw.bam
 sambamba markdup SRR341549.raw.sorted.bam SRR341549.bam
@@ -203,7 +205,7 @@ It's easy to use `minimap2` instead of `bwa mem`. This may help in some contexts
 
 ```bash
 minimap2 -ax sr -t $threads -R '@RG\tID:O104_H4\tSM:O104_H4' \
-    E.coli_K12_MG1655.fa SRR341549_1.fastq.gz  SRR341549_2.fastq.gz \
+    E.coli_K12_MG1655.fa SRR341549_1.fastq  SRR341549_2.fastq \
     | samtools view -b - >SRR341549.raw.minimap2.bam
 sambamba sort SRR341549.raw.minimap2.bam
 sambamba markdup SRR341549.raw.sorted.minimap2.bam SRR341549.minimap2.bam
@@ -257,7 +259,9 @@ tabix SRR1770413.vcf.gz NC_000913.3:1000000-1500000 | wc -l
 If we want to pipe the output into a tool that reads VCF, we'll need to add the `-h` flag, to output the header as well.
 
 ```bash
-tabix -h SRR1770413.vcf.gz NC_000913.3:1000000-1500000 | vcffilter ...
+# tabix -h SRR1770413.vcf.gz NC_000913.3:1000000-1500000 | vcffilter ...
+# example vcf filter
+tabix -h SRR1770413.vcf.gz NC_000913.3:1000000-1500000 | vcffilter -f 'DP > 20' | wc -l
 ```
 
 The `bgzip` format is very similar to that used in BAM, and the indexing scheme is also similar (blocks of compressed data which we build a chromosome position index on top of).
