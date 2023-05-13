@@ -204,7 +204,7 @@ samtools index SRR341549.bam
 It's easy to use `minimap2` instead of `bwa mem`. This may help in some contexts, as it can be several fold faster with minimal reduction in alignment quality. In the case of these short reads, we'd use it as follows. The only major change from bwa mem is that we'll tell it we're working with short read data using `-ax sr`:
 
 ```bash
-minimap2 -ax sr -t $threads -R '@RG\tID:O104_H4\tSM:O104_H4' \
+minimap2 -ax sr -t 2 -R '@RG\tID:O104_H4\tSM:O104_H4' \
     E.coli_K12_MG1655.fa SRR341549_1.fastq  SRR341549_2.fastq \
     | samtools view -b - >SRR341549.raw.minimap2.bam
 sambamba sort SRR341549.raw.minimap2.bam
