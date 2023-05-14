@@ -208,7 +208,7 @@ minimap2 -ax sr -t 2 -R '@RG\tID:O104_H4\tSM:O104_H4' \
     E.coli_K12_MG1655.fa SRR341549_1.fastq  SRR341549_2.fastq \
     | samtools view -b - >SRR341549.raw.minimap2.bam
 sambamba sort SRR341549.raw.minimap2.bam
-sambamba markdup SRR341549.raw.sorted.minimap2.bam SRR341549.minimap2.bam
+sambamba markdup SRR341549.raw.minimap2.sorted.bam SRR341549.minimap2.bam
 ```
 
 ## Part 2: Calling variants
