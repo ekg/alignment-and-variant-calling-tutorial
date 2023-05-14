@@ -46,7 +46,7 @@ Otherwise, let's assume you're in an environment where you've already got them a
 [E. Coli K12](https://en.wikipedia.org/wiki/Escherichia_coli#Model_organism) is a common laboratory strain that has lost its ability to live in the human intestine, but is ideal for manipulation in a controlled setting.
 The genome is relatively short, and so it's a good place to start learning about alignment and variant calling.
 
-### E. Coli K12 reference
+### E. Coli K12 reference (SKIP this step for Evomics2023 as we have already downloaded the files for you!)
 
 We'll get some test data to play with. First, [the E. Coli K12 reference](http://www.ncbi.nlm.nih.gov/nuccore/556503834), from NCBI. It's a bit of a pain to pull out of the web interface so [you can also download it here](http://hypervolu.me/~erik/genomes/E.coli_K12_MG1655.fa).
 
@@ -61,7 +61,7 @@ curl -s http://hypervolu.me/%7Eerik/genomes/E.coli_K12_MG1655.fa | head
 curl -s http://hypervolu.me/%7Eerik/genomes/E.coli_K12_MG1655.fa > E.coli_K12_MG1655.fa
 ```
 
-### E. Coli K12 Illumina 2x300bp MiSeq sequencing results
+### E. Coli K12 Illumina 2x300bp MiSeq sequencing results (SKIP this step for Evomics2023 as we have already downloaded the files for you!)
 
 For testing alignment, let's get some data from a [recently-submitted sequencing run on a K12 strain from the University of Exeter](http://www.ncbi.nlm.nih.gov/sra/?term=SRR1770413). We can use the [sratoolkit](https://github.com/ncbi/sratoolkit) to directly pull the sequence data (in paired FASTQ format) from the archive:
 
@@ -80,7 +80,7 @@ sra-dump --split-files SRR1770413.sra
 
 These appear to be paired 300bp reads from a modern MiSeq.
 
-### E. Coli O104:H4 HiSeq 2000 2x100bp
+### E. Coli O104:H4 HiSeq 2000 2x100bp (SKIP this step for Evomics2023 as we have already downloaded the files for you!)
 
 As a point of comparison, let's also pick up a [sequencing data set from a different E. Coli strain](http://www.ncbi.nlm.nih.gov/sra/SRX095630[accn]). This one is [famous for its role in foodborne illness](https://en.wikipedia.org/wiki/Escherichia_coli_O104%3AH4#Infection) and is of medical interest.
 
@@ -88,7 +88,7 @@ As a point of comparison, let's also pick up a [sequencing data set from a diffe
 fastq-dump --split-files SRR341549
 ```
 
-### Setting up our reference indexes
+### Setting up our reference indexes (START here for Evomics 2023!)
 
 #### FASTA file index
 
@@ -208,7 +208,7 @@ minimap2 -ax sr -t 2 -R '@RG\tID:O104_H4\tSM:O104_H4' \
     E.coli_K12_MG1655.fa SRR341549_1.fastq  SRR341549_2.fastq \
     | samtools view -b - >SRR341549.raw.minimap2.bam
 sambamba sort SRR341549.raw.minimap2.bam
-sambamba markdup SRR341549.raw.sorted.minimap2.bam SRR341549.minimap2.bam
+sambamba markdup SRR341549.raw.minimap2.sorted.bam SRR341549.minimap2.bam
 ```
 
 ## Part 2: Calling variants
