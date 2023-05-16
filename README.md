@@ -15,8 +15,7 @@ We're going to use a bunch of fun tools for working with genomic data:
 7. [sambamba](https://github.com/lomereiter/sambamba)
 8. [seqtk](https://github.com/lh3/seqtk)
 9. [sra-tools](https://github.com/ncbi/sra-tools/wiki/HowTo:-Binary-Installation)
-10. [vg](https://github.com/vgteam/vg)
-11. [rtg-tools](https://www.realtimegenomics.com/products/rtg-tools)
+10. [rtg-tools](https://www.realtimegenomics.com/products/rtg-tools)
 
 In most cases, you can download and build these using this kind of pattern:
 
