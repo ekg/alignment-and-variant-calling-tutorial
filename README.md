@@ -436,7 +436,7 @@ vcfintersect -r hs37d5.fa -v -i NIST_NA12878_20p12.1.vcf.gz NA12878.20p12.1.30x.
 tabix -p vcf NA12878.20p12.1.30x.norm.giab_failed.vcf.gz
 ```
 
-Here we observe why normalization is important when comparing VCF files. Fortunately, the best package available for comparing variant calls to truth sets, [rtgeval](https://github.com/lh3/rtgeval), addresses exactly this concern, and also breaks comparisons into three parts matching the three types of information provided by the VCF file--- positional, allele, and genotype. We'll get into that later in this section.
+Here we observe why normalization is important when comparing VCF files. Fortunately, the best package available for comparing variant calls to truth sets, [rtg-tools](https://www.realtimegenomics.com/products/rtg-tools), addresses exactly this concern, and also breaks comparisons into three parts matching the three types of information provided by the VCF file--- positional, allele, and genotype. We'll get into that later in this section.
 
 ### Hard filtering strategies
 
@@ -467,12 +467,12 @@ vcffilter -f "QUAL / AO > 10 & SAF > 0 & SAR > 0" NA12878.20p12.1.30x.norm.giab_
 
 ### Using RTG-eval for comparison to the truth
 
-The best variant calling comparison and evaluation framework in current use was developed by Real Time Genomics, and has since been open sourced and repackaged into [rtgeval](https://github.com/lh3/rtgeval) by Heng Li. This package was subsequently used for the basis of comparison in the PrecisionFDA challenges in 2016.
+The best variant calling comparison and evaluation framework in current use was developed by Real Time Genomics: [rtg-tools](https://www.realtimegenomics.com/products/rtg-tools). This was subsequently used for the basis of comparison in the PrecisionFDA challenges in 2016.
 
-We can easily apply `rtgeval` to our results, but we will need to prepare the reference in RTG's "SDF" format first.
+We can easily apply `rtg vcfeval` to our results, but we will need to prepare the reference in RTG's "SDF" format first.
 
 ```bash
-rtg format -o hs37d5.sdf hs37d5.fa  # done already
+rtg format -o hs37d5.sdf hs37d5.fa  # done already at evomics2023 --- takes a while so don't re-do!
 ```
 
 Now we can proceed and test the performance of our previous freebayes run against the truth set.
@@ -496,11 +496,11 @@ Threshold  True-pos-baseline  True-pos-call  False-pos  False-neg  Precision  Se
 
 In this case, we can get a quick overview by looking in the files and directories prefixed by `eval1`. It is also quick to clean up with `rm -rf eval1.*`. _Make sure you clean up before re-running on a new file, or use a different prefix!_
 
-
-### Bonus: ROC plots and false positive investigations
+### Bonus: new freebayes configurations, ROC plots, and false positive investigations
 
 Take the output of `rtg vcfeval` in `eval1/` and complete some of the following tasks:
 
 1. Plot the ROC curve based on the QUAL field that's given in `eval1/snp_roc.tsv.gz`.
 2. Look at "false positives" that are over the optimal QUAL threshold. These are in `eval1/fp.vcf.gz`. Take a few and use `samtools tview` or `igv` to look at the alignments around the putative error. What's going on? If anyone completes this we can discuss as a group.
 3. Look at "false negatives" in the `fn.vcf.gz` file and see what's happening in the alignments around each locus. We can also discuss some of these together.
+4. Re-run `freebayes` with different configurations and use `rtg vcfeval` to see if you can get a better F-measure than the default settings!
