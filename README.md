@@ -14,12 +14,9 @@ We're going to use a bunch of fun tools for working with genomic data:
 6. [vcflib](https://github.com/ekg/vcflib/)
 7. [sambamba](https://github.com/lomereiter/sambamba)
 8. [seqtk](https://github.com/lh3/seqtk)
-9. [mutatrix](https://github.com/ekg/mutatrix)
-10. [sra-tools](https://github.com/ncbi/sra-tools/wiki/HowTo:-Binary-Installation)
-11. [glia](https://github.com/ekg/glia.git)
-12. [hhga](https://github.com/ekg/hhga)
-13. [vg](https://github.com/vgteam/vg)
-14. [vw](https://github.com/JohnLangford/vowpal_wabbit/wiki/Download)
+9. [sra-tools](https://github.com/ncbi/sra-tools/wiki/HowTo:-Binary-Installation)
+10. [vg](https://github.com/vgteam/vg)
+11. [rtg-tools](https://www.realtimegenomics.com/products/rtg-tools)
 
 In most cases, you can download and build these using this kind of pattern:
 
@@ -28,7 +25,7 @@ git clone https://github.com/lh3/bwa
 cd bwa && make
 ```
 
-or, in the case of several packages (vcflib, sambamba, freebayes, glia, hhga, and vg), submodules are used to control the dependencies of the project, and so the whole source tree must be cloned using the `--recursive` flag to git. For example, here is how we'd clone and build freebayes:
+or, in the case of several packages (vcflib, sambamba, freebayes, and vg), submodules are used to control the dependencies of the project, and so the whole source tree must be cloned using the `--recursive` flag to git. For example, here is how we'd clone and build freebayes:
 
 ```bash
 git clone --recursive https://github.com/ekg/freebayes
