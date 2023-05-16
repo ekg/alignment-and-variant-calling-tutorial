@@ -500,3 +500,11 @@ Threshold  True-pos-baseline  True-pos-call  False-pos  False-neg  Precision  Se
 
 In this case, we can get a quick overview by looking in the files and directories prefixed by `eval1`. It is also quick to clean up with `rm -rf eval1.*`. _Make sure you clean up before re-running on a new file, or use a different prefix!_
 
+
+### Bonus: ROC plots and false positive investigations
+
+Take the output of `rtg vcfeval` in `eval1/` and complete some of the following tasks:
+
+1. Plot the ROC curve based on the QUAL field that's given in `eval1/snp_roc.tsv.gz`.
+2. Look at "false positives" that are over the optimal QUAL threshold. These are in `eval1/fp.vcf.gz`. Take a few and use `samtools tview` or `igv` to look at the alignments around the putative error. What's going on? If anyone completes this we can discuss as a group.
+3. Look at "false negatives" in the `fn.vcf.gz` file and see what's happening in the alignments around each locus. We can also discuss some of these together.
