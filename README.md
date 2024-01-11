@@ -178,7 +178,7 @@ Thankfully, it's easy to use [unix pipes](https://en.wikiepdia.org/wiki/Pipeline
 You can now run the alignment using a piped approach. _Replace `$threads` with the number of CPUs you would like to use for alignment._ Not all steps in `bwa` run in parallel, but the alignment, which is the most time-consuming step, does. You'll need to set this given the available resources you have.
 
 ```bash
-bwa mem -t 2 -R '@RG\tID:K12\tSM:K12' \
+bwa mem -t 8 -R '@RG\tID:K12\tSM:K12' \
     E.coli_K12_MG1655.fa SRR1770413_1.subsampled.fastq SRR1770413_2.subsampled.fastq \
     | samtools view -b - >SRR1770413.raw.bam
 sambamba sort SRR1770413.raw.bam
@@ -196,7 +196,7 @@ Breaking it down by line:
 Now, run the same alignment process for the O104:H4 strain's data. Make sure to specify a different sample name via the `-R '@RG...` flag incantation to specify the identity of the data in the BAM file header and in the alignment records themselves:
 
 ```bash
-bwa mem -t 2 -R '@RG\tID:O104_H4\tSM:O104_H4' \
+bwa mem -t 8 -R '@RG\tID:O104_H4\tSM:O104_H4' \
     E.coli_K12_MG1655.fa SRR341549_1.subsampled.fastq  SRR341549_2.subsampled.fastq \
     | samtools view -b - >SRR341549.raw.bam
 sambamba sort SRR341549.raw.bam
@@ -215,7 +215,7 @@ samtools index SRR341549.bam
 It's easy to use `minimap2` instead of `bwa mem`. This may help in some contexts, as it can be several fold faster with minimal reduction in alignment quality. In the case of these short reads, we'd use it as follows. The only major change from bwa mem is that we'll tell it we're working with short read data using `-ax sr`:
 
 ```bash
-minimap2 -ax sr -t 2 -R '@RG\tID:O104_H4\tSM:O104_H4' \
+minimap2 -ax sr -t 8 -R '@RG\tID:O104_H4\tSM:O104_H4' \
     E.coli_K12_MG1655.fa SRR1770413_1.subsampled.fastq  SRR1770413_2.subsampled.fastq \
     | samtools view -b - >SRR1770413.raw.minimap2.bam
 sambamba sort SRR1770413.raw.minimap2.bam
@@ -223,7 +223,7 @@ sambamba markdup SRR1770413.raw.minimap2.sorted.bam SRR1770413.minimap2.bam
 ```
 
 ```bash
-minimap2 -ax sr -t 2 -R '@RG\tID:K12\tSM:K12' \
+minimap2 -ax sr -t 8 -R '@RG\tID:K12\tSM:K12' \
     E.coli_K12_MG1655.fa SRR1770413_1.subsampled.fastq  SRR1770413_2.subsampled.fastq \
     | samtools view -b - >SRR1770413.raw.minimap2.bam
 sambamba sort SRR1770413.raw.minimap2.bam
