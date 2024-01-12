@@ -216,10 +216,10 @@ It's easy to use `minimap2` instead of `bwa mem`. This may help in some contexts
 
 ```bash
 minimap2 -ax sr -t 8 -R '@RG\tID:O104_H4\tSM:O104_H4' \
-    E.coli_K12_MG1655.fa SRR1770413_1.subsampled.fastq  SRR1770413_2.subsampled.fastq \
-    | samtools view -b - >SRR1770413.raw.minimap2.bam
-sambamba sort SRR1770413.raw.minimap2.bam
-sambamba markdup SRR1770413.raw.minimap2.sorted.bam SRR1770413.minimap2.bam
+    E.coli_K12_MG1655.fa SRR341549_1.subsampled.fastq  SRR341549_2.subsampled.fastq \
+    | samtools view -b - >SRR341549.raw.minimap2.bam
+sambamba sort SRR341549.raw.minimap2.bam
+sambamba markdup SRR341549.raw.minimap2.sorted.bam SRR1770413.minimap2.bam
 ```
 
 ```bash
