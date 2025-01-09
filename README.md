@@ -1,5 +1,8 @@
 # Alignment and variant calling
 
+Note: For Evomics 2025, please ensure you are working in the directory:
+/home/genomics/workshop_materials/week_1/variant_calling
+
 This tutorial steps through some basic tasks in alignment and variant calling using a handful of Illumina sequencing data sets. For theoretical background, please refer to the included [presentation on alignment and variant calling](https://docs.google.com/presentation/d/1t921ccF66N0_oyn09gbM0w8nzADzWF20rfZkeMv3Sy8/edit?usp=sharing), or the [included PDF from a previous year](https://github.com/ekg/alignment-and-variant-calling-tutorial/raw/master/presentations/Alignment%2C%20Variant%20Calling%2C%20and%20Filtering%20(WGC%20NGS%20Bioinformatics).pdf).
     
 ## Part 0: Setup
@@ -178,7 +181,7 @@ Thankfully, it's easy to use [unix pipes](https://en.wikiepdia.org/wiki/Pipeline
 You can now run the alignment using a piped approach. _Replace `$threads` with the number of CPUs you would like to use for alignment._ Not all steps in `bwa` run in parallel, but the alignment, which is the most time-consuming step, does. You'll need to set this given the available resources you have.
 
 ```bash
-bwa mem -t 8 -R '@RG\tID:K12\tSM:K12' \
+bwa mem -t $threads -R '@RG\tID:K12\tSM:K12' \
     E.coli_K12_MG1655.fa SRR1770413_1.subsampled.fastq SRR1770413_2.subsampled.fastq \
     | samtools view -b - >SRR1770413.raw.bam
 sambamba sort SRR1770413.raw.bam
@@ -326,7 +329,7 @@ Note that the second filtering removes a large region near the beginning of the 
 
 For serious applications, it's not sufficient to simply filter on the basis of bulk metrics like the ts/tv ratio. Some external validation information should be used to guide the development of pipelines for processing genomic data. In our case, we're just using free data from the web, and unless we find some validation data associated with the strains that were sequenced, we can only filter on intuition, bulk metrics like ts/tv, and with an eye for the particular question we're interested in. What we want is to know the truth for a particular context, so as to understand if our filtering criteria make sense.
 
-### The NIST Genome in a Bottle truth set for NA12878
+### The NIST Genome in a Bottle truth set for NA12878 (SKIP this step for Evomics2025 as we have already downloaded the files for you!)
 
 Luckily, a group at the [National Institute of Standards and Technology](https://en.wikipedia.org/wiki/National_Institute_of_Standards_and_Technology) (NIST) has developed a kind of truth set based on the [HapMap CEU cell line NA12878](https://catalog.coriell.org/0/Sections/Search/Sample_Detail.aspx?Ref=GM12878). It's called the [Genome in a Bottle](https://sites.stanford.edu/abms/giab). In addition to characterizing the genome of this cell line using extensive sequencing and manual curation of inconsistencies found between sequencing protocols, the group actually distributes reference material from the cell line for use in validating sequencing pipelines.
 
@@ -419,7 +422,7 @@ There are two main problems:
 Finally, the variants in the GiAB set have been normalized using a similar process, and doing so will ensure there are not any discrepancies when we compare.
 
 ```bash
-vcfallelicprimitives -kg NA12878.20p12.1.30x.vcf.gz \
+vcfallelicprimitives -k NA12878.20p12.1.30x.vcf.gz \
     | vt normalize -r hs37d5.fa - \
     | bgzip >NA12878.20p12.1.30x.norm.vcf.gz
 tabix -p vcf NA12878.20p12.1.30x.norm.vcf.gz
