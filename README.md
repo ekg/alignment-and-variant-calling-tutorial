@@ -1,5 +1,7 @@
 # Alignment and variant calling
 
+[Jump to Starting Point for Evomics 2025](#setting-up-our-reference-indexes-start-here-for-evomics-2025)
+
 Note: For Evomics 2025, please ensure you are working in the directory:
 /home/genomics/workshop_materials/week_1/variant_calling
 
@@ -101,6 +103,9 @@ seqkit sample -p 0.2 SRR341549_2.fastq >SRR341549_2.subsampled.fastq
 This works because the same seed for the PRNG is used in both runs (`-s 11` is the default).
 So we sample the same read pairs in both files even though the commands are independent.
 We get files that have pretty low depth, but for our work this won't matter too much and it might make things more interesting.
+
+
+---
 
 ### Setting up our reference indexes (START here for Evomics 2025!)
 
