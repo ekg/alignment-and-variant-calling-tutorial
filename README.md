@@ -42,7 +42,7 @@ Otherwise, let's assume you're in an environment where you've already got them a
 [E. Coli K12](https://en.wikipedia.org/wiki/Escherichia_coli#Model_organism) is a common laboratory strain that has lost its ability to live in the human intestine, but is ideal for manipulation in a controlled setting.
 The genome is relatively short, and so it's a good place to start learning about alignment and variant calling.
 
-### E. Coli K12 reference (SKIP this step for Evomics2024 as we have already downloaded the files for you!)
+### E. Coli K12 reference (SKIP this step for Evomics2025 as we have already downloaded the files for you!)
 
 We'll get some test data to play with. First, [the E. Coli K12 reference](http://www.ncbi.nlm.nih.gov/nuccore/556503834), from NCBI. It's a bit of a pain to pull out of the web interface so [you can also download it here](http://hypervolu.me/~erik/genomes/E.coli_K12_MG1655.fa).
 
@@ -57,7 +57,7 @@ curl -s http://hypervolu.me/%7Eerik/genomes/E.coli_K12_MG1655.fa | head
 curl -s http://hypervolu.me/%7Eerik/genomes/E.coli_K12_MG1655.fa > E.coli_K12_MG1655.fa
 ```
 
-### E. Coli K12 Illumina 2x300bp MiSeq sequencing results (SKIP this step for Evomics2024 as we have already downloaded the files for you!)
+### E. Coli K12 Illumina 2x300bp MiSeq sequencing results (SKIP this step for Evomics2025 as we have already downloaded the files for you!)
 
 For testing alignment, let's get some data from a [recently-submitted sequencing run on a K12 strain from the University of Exeter](http://www.ncbi.nlm.nih.gov/sra/?term=SRR1770413). We can use the [sratoolkit](https://github.com/ncbi/sratoolkit) to directly pull the sequence data (in paired FASTQ format) from the archive:
 
@@ -76,7 +76,7 @@ sra-dump --split-files SRR1770413.sra
 
 These appear to be paired 300bp reads from a modern MiSeq.
 
-### E. Coli O104:H4 HiSeq 2000 2x100bp (SKIP this step for Evomics2024 as we have already downloaded the files for you!)
+### E. Coli O104:H4 HiSeq 2000 2x100bp (SKIP this step for Evomics2025 as we have already downloaded the files for you!)
 
 As a point of comparison, let's also pick up a [sequencing data set from a different E. Coli strain](http://www.ncbi.nlm.nih.gov/sra/SRX095630[accn]). This one is [famous for its role in foodborne illness](https://en.wikipedia.org/wiki/Escherichia_coli_O104%3AH4#Infection) and is of medical interest.
 
@@ -99,7 +99,7 @@ This works because the same seed for the PRNG is used in both runs (`-s 11` is t
 So we sample the same read pairs in both files even though the commands are independent.
 We get files that have pretty low depth, but for our work this won't matter too much and it might make things more interesting.
 
-### Setting up our reference indexes (START here for Evomics 2024!)
+### Setting up our reference indexes (START here for Evomics 2025!)
 
 #### FASTA file index
 
@@ -337,7 +337,7 @@ wget ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/NA12878_HG001/NISTv3.3.2/
 wget ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/NA12878_HG001/NISTv3.3.2/GRCh37/HG001_GRCh37_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-X_v.3.3.2_highconf_nosomaticdel.bed
 ```
 
-### The human reference (SKIP this step for Evomics2024 as we have already downloaded the files for you!)
+### The human reference (SKIP this step for Evomics2025 as we have already downloaded the files for you!)
 
 For variant calling work, we can use the [1000 Genomes Project's version of the GRCh37 reference](ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz). We could also use the [version of the reference that doesn't include dummy sequences](ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/human_g1k_v37.fasta.gz), as we're just doing variant calling.
 
@@ -472,7 +472,7 @@ The best variant calling comparison and evaluation framework in current use was 
 We can easily apply `rtg vcfeval` to our results, but we will need to prepare the reference in RTG's "SDF" format first.
 
 ```bash
-rtg format -o hs37d5.sdf hs37d5.fa  # done already at evomics2024 --- takes a while so don't re-do!
+rtg format -o hs37d5.sdf hs37d5.fa  # done already at evomics2025 --- takes a while so don't re-do!
 ```
 
 Now we can proceed and test the performance of our previous freebayes run against the truth set.
