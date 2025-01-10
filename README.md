@@ -428,7 +428,7 @@ Finally, the variants in the GiAB set have been normalized using a similar proce
 
 ```bash
 vcflib vcfallelicprimitives -k NA12878.20p12.1.30x.vcf.gz \
-    | vt normalize -r hs37d5.fa - \
+    | vt normalize -n -r hs37d5.fa - \
     | bgzip >NA12878.20p12.1.30x.norm.vcf.gz
 tabix -p vcf NA12878.20p12.1.30x.norm.vcf.gz
 ```
