@@ -294,9 +294,9 @@ tabix SRR1770413.vcf.gz NC_000913.3:1000000-1500000 | wc -l
 If we want to pipe the output into a tool that reads VCF, we'll need to add the `-h` flag, to output the header as well.
 
 ```bash
-# tabix -h SRR1770413.vcf.gz NC_000913.3:1000000-1500000 | vcffilter ...
+# tabix -h SRR1770413.vcf.gz NC_000913.3:1000000-1500000 | bcftools filter ...
 # example vcf filter
-tabix -h SRR1770413.vcf.gz NC_000913.3:1000000-1500000 | vcffilter -f 'DP > 20' | wc -l
+tabix -h SRR1770413.vcf.gz NC_000913.3:1000000-1500000 | bcftools filter -i 'INFO/DP>20' | wc -l
 ```
 
 The `bgzip` format is very similar to that used in BAM, and the indexing scheme is also similar (blocks of compressed data which we build a chromosome position index on top of).
