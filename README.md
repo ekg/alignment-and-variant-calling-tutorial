@@ -453,7 +453,7 @@ The failed list provides a means to examine ways to reduce our false positive ra
 For example, we can test how many of the failed SNPs are removed by applying a simple quality filter and checking the output file's statistics.
 
 ```bash
-vcflib vcffilter -f 'QUAL > 10' NA12878.20p12.1.30x.norm.giab_failed.vcf.gz \
+bcftools filter -i 'QUAL > 10' NA12878.20p12.1.30x.norm.giab_failed.vcf.gz \
     | vt peek -
 ```
 
