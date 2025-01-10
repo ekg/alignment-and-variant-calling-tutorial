@@ -317,7 +317,7 @@ vt peek SRR1770413.vcf.gz
 
 In most biological systems, [transitions (A<->G, C<->T) are far more likely than transversions](https://upload.wikimedia.org/wikipedia/commons/3/35/Transitions-transversions-v3.png), so we expect the ts/tv ratio to be pretty far from 0.5, which is what it would be if all mutations between DNA bases were random. In practice, we tend to see something that's at least 1 in most organisms, and ~2 in some, such as human. In some biological contexts, such as in mitochondria, we see an even higher ratio, perhaps as much as 20.
 
-As we don't have validation information for our sample, we can use this as a simple guide for our first filtering attempts. An easy way is to try different filterings using `vcffilter` and check the ratio of the resulting set with `vt peek`:
+As we don't have validation information for our sample, we can use this as a simple guide for our first filtering attempts. An easy way is to try different filterings using `bcftools filter` and check the ratio of the resulting set with `vt peek`:
 
 ```bash
 # a basic filter to remove low-quality sites
@@ -492,7 +492,7 @@ rtg vcfeval -f QUAL -o eval1 -t hs37d5.sdf -e giab_callable.chr20.bed \
 
 The output of `rtg vcfeval` is a set of reports and files tallying true and false positives.
 
-We also get a nice report in the shell that describes the optimal QUAL cutoff (here equivalent to `vcffilter -f 'QUAL > 3.587'`) and the result if we have no cutoff (`None`).
+We also get a nice report in the shell that describes the optimal QUAL cutoff (here equivalent to `bcftools filter -i 'QUAL>3.587'`) and the result if we have no cutoff (`None`).
 
 ```
 Selected score threshold using: maximized F-measure
