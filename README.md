@@ -391,13 +391,13 @@ tabix -h HG001_GRCh37_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-X_v.
 tabix -p vcf NIST_NA12878_20p12.1.vcf.gz
 ```
 
-Now, we can compare our results to the calls to get a list of potentially failed sites.
+Now, we can compare our results to the calls to get a list of potentially failed sites. Note that `bcftools index -t` also generates the `.tbi` index created by `tabix -p vcf`.
 
 ```bash
-bcftools isec -c none -C -f PASS NIST_NA12878_20p12.1.vcf.gz NA12878.20p12.1.30x.vcf.gz \
-    | bcftools view -R giab_callable.chr20.bed \
-    | bgzip >NA12878.20p12.1.30x.giab_failed.vcf.gz
-tabix -p vcf NA12878.20p12.1.30x.giab_failed.vcf.gz
+bcftools isec -c all -C -w1 -R giab_callable.chr20.bed \
+    NA12878.20p12.1.30x.vcf.gz NIST_NA12878_20p12.1.vcf.gz \
+    | bgzip > NA12878.20p12.1.30x.giab_failed.vcf.gz
+bcftools index -t NA12878.20p12.1.30x.giab_failed.vcf.gz
 ```
 
 We can now examine these using `vt peek` and `vcfstats`, or manually by inspecting them either serially:
