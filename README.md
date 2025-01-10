@@ -427,7 +427,7 @@ There are two main problems:
 Finally, the variants in the GiAB set have been normalized using a similar process, and doing so will ensure there are not any discrepancies when we compare.
 
 ```bash
-vcfallelicprimitives -k NA12878.20p12.1.30x.vcf.gz \
+vcflib vcfallelicprimitives -k NA12878.20p12.1.30x.vcf.gz \
     | vt normalize -r hs37d5.fa - \
     | bgzip >NA12878.20p12.1.30x.norm.vcf.gz
 tabix -p vcf NA12878.20p12.1.30x.norm.vcf.gz
