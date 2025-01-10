@@ -394,7 +394,7 @@ tabix -p vcf NIST_NA12878_20p12.1.vcf.gz
 Now, we can compare our results to the calls to get a list of potentially failed sites.
 
 ```bash
-vcfintersect -r hs37d5.fa -v -i NIST_NA12878_20p12.1.vcf.gz NA12878.20p12.1.30x.vcf.gz \
+bcftools isec -c none -C -f PASS NIST_NA12878_20p12.1.vcf.gz NA12878.20p12.1.30x.vcf.gz \
     | bcftools view -R giab_callable.chr20.bed \
     | bgzip >NA12878.20p12.1.30x.giab_failed.vcf.gz
 tabix -p vcf NA12878.20p12.1.30x.giab_failed.vcf.gz
