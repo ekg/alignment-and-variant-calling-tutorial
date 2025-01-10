@@ -325,7 +325,7 @@ vcflib vcffilter -f 'QUAL > 10' SRR1770413.vcf.gz | vt peek -
 
 # scaling quality by depth is like requiring that the additional log-unit contribution
 # of each read is at least N
-vcflib vcffilter -f 'QUAL / INFO.AO > 10' SRR1770413.vcf.gz | vt peek -
+vcflib vcffilter -f 'QUAL / AO > 10' SRR1770413.vcf.gz | vt peek -
 ```
 
 Note that the second filtering removes a large region near the beginning of the reference where there appears to be some paralogy, which could be caused by a duplication of this region in the sequenced sample relative to the reference genome. The read counts for reference and alternate are each around half of the total depth, which is unusual for a sequenced haploid clone and may indicate some structural differences between the sample and the original reference.
@@ -469,8 +469,8 @@ tabix -p vcf NA12878.20p12.1.30x.norm.giab_passed.vcf.gz
 Now we can test how many variants remain after using the same filters on both:
 
 ```bash
-vcflib vcffilter -f 'QUAL / INFO.AO > 10 & INFO.SAF > 0 & INFO.SAR > 0' NA12878.20p12.1.30x.norm.giab_passed.vcf.gz | vt peek -
-vcflib vcffilter -f 'QUAL / INFO.AO > 10 & INFO.SAF > 0 & INFO.SAR > 0' NA12878.20p12.1.30x.norm.giab_failed.vcf.gz | vt peek -
+vcflib vcffilter -f 'QUAL / AO > 10 & SAF > 0 & SAR > 0' NA12878.20p12.1.30x.norm.giab_passed.vcf.gz | vt peek -
+vcflib vcffilter -f 'QUAL / AO > 10 & SAF > 0 & SAR > 0' NA12878.20p12.1.30x.norm.giab_failed.vcf.gz | vt peek -
 ```
 
 ### Using RTG-eval for comparison to the truth
