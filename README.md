@@ -438,8 +438,8 @@ Here, `vcfallelicprimitives -kg` decomposes any haplotype calls from `freebayes`
 We can now compare the results again:
 
 ```bash
-vcfintersect -r hs37d5.fa -v -i NIST_NA12878_20p12.1.vcf.gz NA12878.20p12.1.30x.norm.vcf.gz \
-    | vcfintersect -b giab_callable.chr20.bed \
+vcflib vcfintersect -r hs37d5.fa -v -i NIST_NA12878_20p12.1.vcf.gz NA12878.20p12.1.30x.norm.vcf.gz \
+    | vcflib vcfintersect -b giab_callable.chr20.bed \
     | bgzip >NA12878.20p12.1.30x.norm.giab_failed.vcf.gz
 tabix -p vcf NA12878.20p12.1.30x.norm.giab_failed.vcf.gz
 ```
@@ -460,8 +460,8 @@ vcflib vcffilter -f 'QUAL > 10' NA12878.20p12.1.30x.norm.giab_failed.vcf.gz \
 We might also want to measure our sensitivity from different strategies. To do this, just invert the call to `vcfintersect` by removing the `-v` flag (which tells it to invert):
 
 ```bash
-vcfintersect -r hs37d5.fa -i NIST_NA12878_20p12.1.vcf.gz NA12878.20p12.1.30x.norm.vcf.gz \
-    | vcfintersect -b giab_callable.chr20.bed \
+vcflib vcfintersect -r hs37d5.fa -i NIST_NA12878_20p12.1.vcf.gz NA12878.20p12.1.30x.norm.vcf.gz \
+    | vcflib vcfintersect -b giab_callable.chr20.bed \
     | bgzip >NA12878.20p12.1.30x.norm.giab_passed.vcf.gz
 tabix -p vcf NA12878.20p12.1.30x.norm.giab_passed.vcf.gz
 ```
