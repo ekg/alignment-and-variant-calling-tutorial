@@ -321,11 +321,11 @@ As we don't have validation information for our sample, we can use this as a sim
 
 ```bash
 # a basic filter to remove low-quality sites
-vcffilter -f 'QUAL > 10' SRR1770413.vcf.gz | vt peek -
+bcftools filter -i 'QUAL>10' SRR1770413.vcf.gz | vt peek -
 
 # scaling quality by depth is like requiring that the additional log-unit contribution
 # of each read is at least N
-vcffilter -f 'QUAL / AO > 10' SRR1770413.vcf.gz | vt peek -
+bcftools filter -i 'QUAL/INFO/AO>10' SRR1770413.vcf.gz | vt peek -
 ```
 
 Note that the second filtering removes a large region near the beginning of the reference where there appears to be some paralogy, which could be caused by a duplication of this region in the sequenced sample relative to the reference genome. The read counts for reference and alternate are each around half of the total depth, which is unusual for a sequenced haploid clone and may indicate some structural differences between the sample and the original reference.
@@ -453,7 +453,7 @@ The failed list provides a means to examine ways to reduce our false positive ra
 For example, we can test how many of the failed SNPs are removed by applying a simple quality filter and checking the output file's statistics.
 
 ```bash
-vcffilter -f "QUAL > 10" NA12878.20p12.1.30x.norm.giab_failed.vcf.gz \
+bcftools filter -i 'QUAL>10' NA12878.20p12.1.30x.norm.giab_failed.vcf.gz \
     | vt peek -
 ```
 
@@ -469,8 +469,8 @@ tabix -p vcf NA12878.20p12.1.30x.norm.giab_passed.vcf.gz
 Now we can test how many variants remain after using the same filters on both:
 
 ```bash
-vcffilter -f "QUAL / AO > 10 & SAF > 0 & SAR > 0" NA12878.20p12.1.30x.norm.giab_passed.vcf.gz | vt peek -
-vcffilter -f "QUAL / AO > 10 & SAF > 0 & SAR > 0" NA12878.20p12.1.30x.norm.giab_failed.vcf.gz | vt peek -
+bcftools filter -i 'QUAL/INFO/AO>10 && INFO/SAF>0 && INFO/SAR>0' NA12878.20p12.1.30x.norm.giab_passed.vcf.gz | vt peek -
+bcftools filter -i 'QUAL/INFO/AO>10 && INFO/SAF>0 && INFO/SAR>0' NA12878.20p12.1.30x.norm.giab_failed.vcf.gz | vt peek -
 ```
 
 ### Using RTG-eval for comparison to the truth
