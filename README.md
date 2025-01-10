@@ -359,7 +359,7 @@ samtools faidx hs37d5.fa
 
 To keep things quick enough for the tutorial, let's grab a little chunk of an NA12878 dataset. Let's use [20p12.1](http://genome-euro.ucsc.edu/cgi-bin/hgTracks?db=hg19&lastVirtModeType=default&lastVirtModeExtraState=&virtModeType=default&virtMode=0&nonVirtPosition=&position=chr20%3A12100001-17900000&hgsid=220600397_Vs2XvVv0rRPE9lPwepHAL4Iq3ndi). We'll use a downsampled alignment made from Illumina HiSeq sequencing of NA12878 (HG001) that was used as an input to the [NIST Genome in a Bottle](https://github.com/genome-in-a-bottle) truth set for this sample. (Other relevant data can be found in the [GiAB alignment indexes](https://github.com/genome-in-a-bottle/giab_data_indexes).)
 
-We don't need to download the entire BAM file to do this. `samtools` can download the BAM index (`.bai`) provided it hosted alongside the file on the HTTP/FTP server and then use this to jump to a particular target in the remote file.
+We don't need to download the entire BAM file to do this. `samtools` can download the BAM index (`.bai`) provided it hosted alongside the file on the HTTP/FTP server and then use this to jump to a particular target in the remote file. _SKIP THIS EXTRACTION IF YOU'RE AT EVOMICS 2025!_
 
 ```bash
 samtools view -b ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/data/NA12878/NIST_NA12878_HG001_HiSeq_300x/RMNISTHS_30xdownsample.bam 20:12100000-17900000 >NA12878.20p12.1.30x.bam
@@ -395,7 +395,7 @@ Now, we can compare our results to the calls to get a list of potentially failed
 
 ```bash
 vcfintersect -r hs37d5.fa -v -i NIST_NA12878_20p12.1.vcf.gz NA12878.20p12.1.30x.vcf.gz \
-    | vcfintersect -b giab_callable.chr20.bed \
+    | bcftools view -R giab_callable.chr20.bed \
     | bgzip >NA12878.20p12.1.30x.giab_failed.vcf.gz
 tabix -p vcf NA12878.20p12.1.30x.giab_failed.vcf.gz
 ```
